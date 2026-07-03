@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jump Rope Tracker</title>
+    <style>
+:root {
+    --primary: #ff5722;
+    --bg-blur: rgba(20, 20, 20, 0.7);
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    /* Mirror the camera */
+    transform: scaleX(-1); 
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 2;
+    /* Canvas must also be mirrored to match the video */
+    transform: scaleX(-1);
+    pointer-events: none;
+}
+
+.ui-panel {
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    background: var(--bg-blur);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 24px 48px;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ui-panel.bump {
+    transform: translateX(-50%) scale(1.08);
+}
+
+.title {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+}
+
+.counter {
+    color: var(--primary);
+    font-size: 84px;
+    font-weight: 800;
+    margin: 5px 0;
+    line-height: 1;
+    text-shadow: 0 0 25px rgba(255, 87, 34, 0.5);
+}
+
+.start-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.start-button:hover {
+    background: #ff7043;
+    box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6);
+}
+
+.start-button:active {
+    transform: scale(0.95);
+}
+
+.start-button.hidden {
+    display: none;
+}
+
+.done-button {
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.done-button:hover {
+    background: #f0f0f0;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+}
+
+.done-button:active {
+    transform: scale(0.95);
+}
+
+.status-text {
+    margin-top: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    font-weight: 400;
+}
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- The camera feed -->
+        <video id="video" autoplay playsinline></video>
+        
+        <!-- The overlay for drawing the wireframe -->
+        <canvas id="output_canvas"></canvas>
+        
+        <!-- The UI -->
+        <div class="ui-panel">
+            <h1 class="title">JUMPS</h1>
+            <div id="jump-count" class="counter">0</div>
+            <div id="timer" class="timer" style="display: none; font-size: 48px; font-weight: 800; color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; margin-bottom: 10px; text-shadow: 0 0 15px rgba(255,255,255,0.2);">00:00</div>
+            <button id="start-btn" class="start-button" style="display: none;">Start Camera</button>
+            <button id="done-btn" class="done-button" style="display: none;">Done Workout</button>
+            <div id="status" class="status-text">Loading Model...</div>
+        </div>
+    </div>
+
+    <!-- Stats Overlay -->
+    <div id="stats-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20,20,20,0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 10; display: none; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="background: rgba(40,40,40,0.9); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white;">
+            <h2 style="margin-top: 0; color: #ff5722; letter-spacing: 2px;">SESSION COMPLETE</h2>
+            <div style="margin: 20px 0; font-size: 24px;">
+                <div style="margin: 10px 0;">Total Jumps: <strong id="stat-jumps" style="color: #ff5722;">0</strong></div>
+                <div class="stat-item">
+                <span class="stat-label">Duration:</span>
+                <span id="stat-time" class="stat-value">00:00</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Speed:</span>
+                <span id="stat-speed" class="stat-value">0 JPM</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Est. Distance:</span>
+                <span id="stat-dist" class="stat-value" style="color: #ff5722; font-weight: bold;">0 mi</span>
+            </div>
+            <button id="restart-btn" class="start-button" style="margin-top: 25px;">Jump Again</button>
+        </div>
+    </div>
+
+    <script type="module">
+import {
+    PoseLandmarker,
+    FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/vision_bundle.js";
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('output_canvas');
+const ctx = canvas.getContext('2d');
+const jumpCountEl = document.getElementById('jump-count');
+const timerEl = document.getElementById('timer');
+const doneBtn = document.getElementById('done-btn');
+const statsOverlay = document.getElementById('stats-overlay');
+const statJumps = document.getElementById('stat-jumps');
+const statTime = document.getElementById('stat-time');
+const statSpeed = document.getElementById('stat-speed');
+const statDist = document.getElementById('stat-dist');
+const restartBtn = document.getElementById('restart-btn');
+const startBtn = document.getElementById('start-btn');
+const statusText = document.getElementById('status');
+const uiPanel = document.querySelector('.ui-panel');
+
+let poseLandmarker;
+let runningMode = "VIDEO";
+let lastVideoTime = -1;
+let cameraActive = false;
+
+// Jump Tracking State
+let jumpCount = 0;
+let isJumping = false;
+let jumpFrames = 0;
+let baselineY = null;
+let jumpStartTorso = 0;
+let sessionStartTime = null;
+let timerInterval = null;
+
+const POSE_CONNECTIONS = [
+    // Stick figure
+    [11, 12], [11, 23], [12, 24], [23, 24], 
+    [11, 13], [13, 15], [12, 14], [14, 16], 
+    [23, 25], [25, 27], [24, 26], [26, 28]
+];
+
+// Initialize MediaPipe Tasks
+async function initializeModel() {
+    try {
+        const vision = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/wasm"
+        );
+        poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
+                delegate: "CPU"
+            },
+            runningMode: runningMode,
+            minPoseDetectionConfidence: 0.5,
+            minPosePresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        statusText.innerText = "Ready!";
+        startBtn.style.display = "block";
+    } catch (error) {
+        console.error(error);
+        statusText.innerText = "Error loading model. Check console.";
+    }
+}
+
+initializeModel();
+
+startBtn.addEventListener('click', async () => {
+    startBtn.style.display = "none";
+    statusText.style.display = "block";
+    statusText.innerText = "Requesting camera access...";
+    try {
+        // Request camera with facingMode: user (selfie camera)
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
+        video.srcObject = stream;
+        video.addEventListener("loadeddata", predictWebcam);
+        cameraActive = true;
+        statusText.style.display = "none";
+        timerEl.style.display = "block";
+        doneBtn.style.display = "block";
+        sessionStartTime = Date.now();
+        timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            timerEl.innerText = `${mins}:${secs}`;
+        }, 1000);
+    } catch (err) {
+        console.error(err);
+        statusText.innerText = "Camera access denied or unavailable.";
+        startBtn.style.display = "block";
+    }
+});
+
+function resizeCanvas() {
+    // Keep canvas dimensions synced with the video's actual resolution
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+    }
+}
+
+function predictWebcam() {
+    if (!cameraActive) return;
+    resizeCanvas();
+    
+    let startTimeMs = performance.now();
+    if (lastVideoTime !== video.currentTime) {
+        lastVideoTime = video.currentTime;
+        poseLandmarker.detectForVideo(video, startTimeMs, (result) => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (result.landmarks && result.landmarks.length > 0) {
+                const landmarks = result.landmarks[0];
+                drawWireframe(landmarks, canvas.width, canvas.height);
+                processJumpLogic(landmarks);
+            }
+        });
+    }
+    
+    // Call this function again to keep predicting when the browser is ready
+    window.requestAnimationFrame(predictWebcam);
+}
+
+function drawWireframe(landmarks, w, h) {
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#ff5722"; // Neon Orange
+    ctx.fillStyle = "#ff5722";
+
+    // 1. Draw Bounding Box (Green)
+    const xCoords = landmarks.map(lm => lm.x * w);
+    const yCoords = landmarks.map(lm => lm.y * h);
+    const xMin = Math.max(0, Math.min(...xCoords));
+    const xMax = Math.min(w, Math.max(...xCoords));
+    const yMin = Math.max(0, Math.min(...yCoords));
+    const yMax = Math.min(h, Math.max(...yCoords));
+    
+    ctx.strokeStyle = "#00ff00";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+    
+    ctx.strokeStyle = "#ff5722";
+
+    // 2. Draw connections
+    for (const [startIdx, endIdx] of POSE_CONNECTIONS) {
+        const start = landmarks[startIdx];
+        const end = landmarks[endIdx];
+        if (start && end) {
+            ctx.beginPath();
+            ctx.moveTo(start.x * w, start.y * h);
+            ctx.lineTo(end.x * w, end.y * h);
+            ctx.stroke();
+        }
+    }
+
+    // 3. Draw joints
+    for (const lm of landmarks) {
+        if (lm) {
+            ctx.beginPath();
+            ctx.arc(lm.x * w, lm.y * h, 6, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+}
+
+function processJumpLogic(landmarks) {
+    const leftHip = landmarks[23].y;
+    const rightHip = landmarks[24].y;
+    const avgHipY = (leftHip + rightHip) / 2;
+
+    const leftShoulder = landmarks[11].y;
+    const rightShoulder = landmarks[12].y;
+    const avgShoulderY = (leftShoulder + rightShoulder) / 2;
+
+    const torsoHeight = Math.max(0.05, avgHipY - avgShoulderY);
+
+    if (baselineY === null) {
+        baselineY = avgHipY;
+    }
+
+    const jumpThreshold = torsoHeight * 0.20;
+
+    if (avgHipY < (baselineY - jumpThreshold)) {
+        if (!isJumping) {
+            isJumping = true;
+            jumpFrames = 0;
+            jumpStartTorso = torsoHeight;
+        } else {
+            jumpFrames++;
+            // Cancel fake jumps (too long in air)
+            if (jumpFrames > 20) {
+                isJumping = false;
+                baselineY = avgHipY;
+            }
+            // Cancel fake jumps (leaning over or walking changes torso size)
+            if (Math.abs(torsoHeight - jumpStartTorso) / jumpStartTorso > 0.15) {
+                isJumping = false;
+                baselineY = avgHipY;
+            }
+        }
+    } else {
+        if (isJumping) {
+            if (avgHipY > (baselineY - jumpThreshold * 0.5)) {
+                if (jumpFrames >= 4) {
+                    jumpCount++;
+                    updateUI();
+                }
+                isJumping = false;
+            }
+        } else {
+            if (avgHipY > baselineY) {
+                baselineY = baselineY * 0.5 + avgHipY * 0.5;
+            } else {
+                baselineY = baselineY * 0.95 + avgHipY * 0.05;
+            }
+        }
+    }
+}
+
+function updateUI() {
+    jumpCountEl.innerText = jumpCount;
+    uiPanel.classList.add('bump');
+    setTimeout(() => {
+        uiPanel.classList.remove('bump');
+    }, 150);
+}
+
+doneBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    cameraActive = false;
+    video.pause();
+    
+    const elapsedSecs = Math.max(1, Math.floor((Date.now() - sessionStartTime) / 1000));
+    const mins = String(Math.floor(elapsedSecs / 60)).padStart(2, '0');
+    const secs = String(elapsedSecs % 60).padStart(2, '0');
+    const jpm = Math.round(jumpCount / (elapsedSecs / 60));
+    
+    // Estimate distance (roughly 1 mile per 1200 jumps)
+    const distanceMiles = (jumpCount / 1200).toFixed(2);
+    
+    statJumps.innerText = jumpCount;
+    statTime.innerText = `${mins}:${secs}`;
+    statSpeed.innerText = jpm;
+    statDist.innerText = `${distanceMiles} mi`;
+    
+    statsOverlay.style.display = "flex";
+});
+
+restartBtn.addEventListener('click', () => {
+    statsOverlay.style.display = "none";
+    jumpCount = 0;
+    updateUI();
+    baselineY = null;
+    isJumping = false;
+    
+    video.play();
+    cameraActive = true;
+    sessionStartTime = Date.now();
+    timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const secs = String(elapsed % 60).padStart(2, '0');
+        timerEl.innerText = `${mins}:${secs}`;
+    }, 1000);
+    predictWebcam();
+});
+    </script>
+</body>
+</html>
