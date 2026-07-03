@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jump Rope Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- The camera feed -->
+        <video id="video" autoplay playsinline></video>
+        
+        <!-- The overlay for drawing the wireframe -->
+        <canvas id="output_canvas"></canvas>
+        
+        <!-- The UI -->
+        <div class="ui-panel">
+            <h1 class="title">JUMPS</h1>
+            <div id="jump-count" class="counter">0</div>
+            <button id="start-btn" class="start-button" style="display: none;">Start Camera</button>
+            <div id="status" class="status-text">Loading Model...</div>
+        </div>
+    </div>
+
+    <!-- Load MediaPipe Tasks Vision from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js" crossorigin="anonymous"></script>
+    <script src="app.js"></script>
+</body>
+</html>
