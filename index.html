@@ -348,6 +348,12 @@ input:checked + .slider:before {
         </div>
     </div>
 
+    <!-- Bounds Warning Overlay -->
+    <div id="bounds-warning" style="display: none; position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 50; padding: 20px 40px; border-radius: 20px; text-align: center; border: 2px solid #ff5722; color: white; box-shadow: 0 10px 40px rgba(255, 0, 0, 0.5);">
+        <h2 style="margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">OUT OF FRAME</h2>
+        <div style="margin-top: 10px; font-size: 18px; font-weight: 600;">Ensure green rectangle is entirely in view of camera</div>
+    </div>
+
     <!-- Countdown Overlay (Dimmer only) -->
     <div id="countdown-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 10;"></div>
 
@@ -419,6 +425,10 @@ const restartBtn = document.getElementById('restart-btn');
 const startBtn = document.getElementById('start-btn');
 const statusText = document.getElementById('status');
 const uiPanel = document.querySelector('.ui-panel');
+const boundsWarning = document.getElementById('bounds-warning');
+
+// State flags
+let isOutOfFrame = false;
 
 // Goal Mode Elements
 const goalToggle = document.getElementById('goal-toggle');
@@ -623,6 +633,13 @@ function resizeCanvas() {
 
 function predictWebcam() {
     if (!cameraActive) return;
+    
+    // Prevent MediaPipe WASM crash by ensuring video has data before predicting
+    if (video.readyState < 2) {
+        setTimeout(predictWebcam, 33);
+        return;
+    }
+
     resizeCanvas();
     
     let startTimeMs = performance.now();
@@ -652,18 +669,43 @@ function drawWireframe(landmarks, w, h) {
     ctx.strokeStyle = "#ff5722"; // Neon Orange
     ctx.fillStyle = "#ff5722";
 
-    // Filter out landmarks that the AI guesses are way off-screen (which causes the bounding box to stretch/lock to the edges)
-    const onScreenLms = landmarks.filter(lm => lm.y >= -0.1 && lm.y <= 1.1 && lm.x >= -0.1 && lm.x <= 1.1);
+    // Filter out landmarks that the AI guesses are way off-screen
+    const onScreenLms = landmarks.filter(lm => lm.y >= 0 && lm.y <= 1 && lm.x >= 0 && lm.x <= 1);
     const boxLms = onScreenLms.length > 0 ? onScreenLms : landmarks;
 
     // 1. Draw Bounding Box (Green) around on-screen body parts
     const xCoords = boxLms.map(lm => lm.x * w);
     const yCoords = boxLms.map(lm => lm.y * h);
     const padding = 20;
-    const xMin = Math.max(0, Math.min(...xCoords) - padding);
-    const xMax = Math.min(w, Math.max(...xCoords) + padding);
-    const yMin = Math.max(0, Math.min(...yCoords) - padding);
-    const yMax = Math.min(h, Math.max(...yCoords) + padding);
+    
+    const rawXMin = Math.min(...xCoords) - padding;
+    const rawXMax = Math.max(...xCoords) + padding;
+    const rawYMin = Math.min(...yCoords) - padding;
+    const rawYMax = Math.max(...yCoords) + padding;
+
+    let currentOutOfFrame = false;
+    if (rawXMin < 0 || rawXMax > w || rawYMin < 0 || rawYMax > h) {
+        currentOutOfFrame = true;
+    }
+
+    if (currentOutOfFrame && !isOutOfFrame) {
+        isOutOfFrame = true;
+        boundsWarning.style.display = "block";
+        if (!isPaused && cameraActive && !isCountdownActive) {
+            accumulatedTime += Date.now() - sessionStartTime;
+        }
+    } else if (!currentOutOfFrame && isOutOfFrame) {
+        isOutOfFrame = false;
+        boundsWarning.style.display = "none";
+        if (!isPaused && cameraActive && !isCountdownActive) {
+            sessionStartTime = Date.now();
+        }
+    }
+
+    const xMin = Math.max(0, rawXMin);
+    const xMax = Math.min(w, rawXMax);
+    const yMin = Math.max(0, rawYMin);
+    const yMax = Math.min(h, rawYMax);
     
     ctx.strokeStyle = "#00ff00";
     ctx.lineWidth = 3;
@@ -731,8 +773,8 @@ function processJumpLogic(landmarks) {
         referenceHeight = Math.max(0.05, shoulderWidth * 1.5);
     }
 
-    // If paused (e.g. during countdown), continuously calibrate baseline so it's accurate when session starts
-    if (isPaused || isCountdownActive) {
+    // If paused (e.g. during countdown or out of frame), continuously calibrate baseline so it's accurate when session starts
+    if (isPaused || isCountdownActive || isOutOfFrame) {
         baselineY = trackerY;
         baselineTorsoHeight = referenceHeight;
         isJumping = false;
@@ -752,7 +794,7 @@ function processJumpLogic(landmarks) {
         return;
     }
 
-    const jumpThreshold = Math.max(referenceHeight * 0.15, 0.015);
+    const jumpThreshold = Math.max(referenceHeight * 0.10, 0.015);
 
     if (trackerY < (baselineY - jumpThreshold)) {
         if (!isJumping) {
@@ -777,10 +819,10 @@ function processJumpLogic(landmarks) {
         }
     } else {
         if (isJumping) {
-            // Require them to drop almost all the way back to the baseline to register a landing
-            const landingThreshold = Math.max(jumpThreshold * 0.2, 0.005);
+            // Drop halfway back down to register a landing (allows staying light on toes)
+            const landingThreshold = Math.max(jumpThreshold * 0.5, 0.01);
             if (trackerY > (baselineY - landingThreshold)) {
-                if (jumpFrames >= 3) {
+                if (jumpFrames >= 2) {
                     jumpCount++;
                     updateUI();
                 }
@@ -835,8 +877,16 @@ doneBtn.addEventListener('click', () => {
         document.getElementById('countdown-container').style.display = "none";
     }
     
+    boundsWarning.style.display = "none";
+    isOutOfFrame = false;
+    
     cameraActive = false;
     video.pause();
+    if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     pauseBtn.style.display = "none";
     statusText.style.display = "none";
     
@@ -905,7 +955,9 @@ pauseBtn.addEventListener('click', () => {
     if (!isPaused) {
         // Pause the session
         isPaused = true;
-        accumulatedTime += Date.now() - sessionStartTime;
+        if (!isOutOfFrame) {
+            accumulatedTime += Date.now() - sessionStartTime;
+        }
         pauseBtn.innerText = "Resume Session";
         pauseBtn.style.background = "#4caf50"; // Turn green to indicate resume action
         statusText.style.display = "block";
@@ -913,7 +965,9 @@ pauseBtn.addEventListener('click', () => {
     } else {
         // Resume the session
         isPaused = false;
-        sessionStartTime = Date.now();
+        if (!isOutOfFrame) {
+            sessionStartTime = Date.now();
+        }
         pauseBtn.innerText = "Pause Session";
         pauseBtn.style.background = "#ff9800"; // Back to orange
         statusText.style.display = "none";
@@ -970,23 +1024,32 @@ restartBtn.addEventListener('click', () => {
     
     updateUI();
     
-    video.play();
-    cameraActive = true;
-    pauseBtn.style.display = "block";
-    pauseBtn.innerText = "Pause Session";
-    pauseBtn.style.background = "#ff9800";
-    statusText.style.display = "none";
-    timerEl.innerText = "00:00";
-    timerInterval = setInterval(() => {
-        if (!isPaused) {
-            const elapsed = Math.floor((accumulatedTime + (Date.now() - sessionStartTime)) / 1000);
-            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-            const secs = String(elapsed % 60).padStart(2, '0');
-            timerEl.innerText = `${mins}:${secs}`;
-        }
-    }, 1000);
-    startSessionWithCountdown();
-    predictWebcam();
+    navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+    }).then((stream) => {
+        video.srcObject = stream;
+        video.play();
+        cameraActive = true;
+        pauseBtn.style.display = "block";
+        pauseBtn.innerText = "Pause Session";
+        pauseBtn.style.background = "#ff9800";
+        statusText.style.display = "none";
+        sessionStartTime = Date.now();
+        timerInterval = setInterval(() => {
+            if (!isPaused && !isOutOfFrame) {
+                const elapsed = Math.floor((accumulatedTime + (Date.now() - sessionStartTime)) / 1000);
+                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const secs = String(elapsed % 60).padStart(2, '0');
+                timerEl.innerText = `${mins}:${secs}`;
+            }
+        }, 1000);
+        startSessionWithCountdown();
+        // The loadeddata event listener attached during the first start will automatically trigger predictWebcam safely
+    }).catch((err) => {
+        console.error(err);
+        statusText.style.display = "block";
+        statusText.innerText = "Camera access denied or unavailable. Please refresh.";
+    });
 });
     </script>
 </body>
