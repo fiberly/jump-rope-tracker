@@ -57,10 +57,9 @@ canvas {
 
 .ui-panel {
     position: absolute;
-    top: 8%;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
+    top: 30px;
+    left: 30px;
+    z-index: 20;
     background: var(--bg-blur);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
@@ -76,7 +75,7 @@ canvas {
 }
 
 .ui-panel.bump {
-    transform: translateX(-50%) scale(1.08);
+    transform: scale(1.08);
 }
 
 .title {
@@ -156,6 +155,138 @@ canvas {
     font-size: 13px;
     font-weight: 400;
 }
+
+.pause-button {
+    background: #ff9800;
+    color: #ffffff;
+    border: none;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.pause-button:hover {
+    background: #ffa726;
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+}
+
+.pause-button:active {
+    transform: scale(0.95);
+}
+
+/* Goal Inputs UI */
+.goal-settings {
+    margin-top: 15px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.goal-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+}
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: .4s;
+    border-radius: 20px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .slider {
+    background-color: var(--primary);
+}
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.goal-inputs {
+    display: flex;
+    gap: 10px;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.goal-inputs.show {
+    max-height: 60px;
+    opacity: 1;
+}
+
+.goal-input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.goal-input-group label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 4px;
+}
+
+.goal-input-group input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 8px;
+    padding: 8px;
+    width: 70px;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    font-size: 14px;
+}
+
+.goal-input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.set-progress {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    font-weight: 600;
+    display: none;
+    letter-spacing: 1px;
+}
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
@@ -171,19 +302,64 @@ canvas {
         <div class="ui-panel">
             <h1 class="title">JUMPS</h1>
             <div id="jump-count" class="counter">0</div>
+            <div id="set-progress" class="set-progress" style="display: none;">Set 1 / 15</div>
             <div id="timer" class="timer" style="display: none; font-size: 48px; font-weight: 800; color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; margin-bottom: 10px; text-shadow: 0 0 15px rgba(255,255,255,0.2);">00:00</div>
+            
+            <div id="goal-settings" class="goal-settings" style="display: none;">
+                <div class="goal-toggle-wrapper">
+                    <span>Set Jump Rope Goal</span>
+                    <label class="switch">
+                        <input type="checkbox" id="goal-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="goal-inputs" class="goal-inputs">
+                    <div class="goal-input-group">
+                        <label for="target-reps">Reps per set</label>
+                        <input type="number" id="target-reps" value="25" min="1">
+                    </div>
+                    <div class="goal-input-group">
+                        <label for="target-sets">Sets</label>
+                        <input type="number" id="target-sets" value="2" min="1">
+                    </div>
+                </div>
+            </div>
+
             <button id="start-btn" class="start-button" style="display: none;">Start camera & jump rope session</button>
+            <button id="pause-btn" class="pause-button" style="display: none;">Pause Session</button>
             <button id="done-btn" class="done-button" style="display: none;">Done with jump rope session.</button>
+            <div id="countdown-container" style="display: none; flex-direction: column; align-items: center; margin-top: 25px; margin-bottom: 10px;">
+                <div id="countdown-number" style="font-size: 100px; font-weight: 800; color: #ff5722; text-shadow: 0 0 30px rgba(255, 87, 34, 0.8); line-height: 1;">10</div>
+                <div style="font-size: 16px; color: white; margin-top: 10px; font-weight: 600; letter-spacing: 2px;">GET IN POSITION</div>
+            </div>
+            
             <div id="status" class="status-text">Loading Model...</div>
         </div>
     </div>
 
+    <!-- Set Complete Overlay -->
+    <div id="set-complete-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20,20,20,0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 30; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="background: rgba(40,40,40,0.9); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white;">
+            <h2 id="set-complete-title" style="margin-top: 0; color: #ff5722; letter-spacing: 2px;">SET 1 COMPLETE</h2>
+            <div style="margin: 20px 0; font-size: 18px; color: rgba(255, 255, 255, 0.7);">
+                Take a breather. You're doing great.
+            </div>
+            <button id="continue-set-btn" class="start-button" style="margin-top: 25px;">Continue to Next Set</button>
+        </div>
+    </div>
+
+    <!-- Countdown Overlay (Dimmer only) -->
+    <div id="countdown-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 10;"></div>
+
     <!-- Stats Overlay -->
-    <div id="stats-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20,20,20,0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 10; display: none; justify-content: center; align-items: center; flex-direction: column;">
+    <div id="stats-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20,20,20,0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 40; display: none; justify-content: center; align-items: center; flex-direction: column;">
         <div style="background: rgba(40,40,40,0.9); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white;">
             <h2 style="margin-top: 0; color: #ff5722; letter-spacing: 2px;">JUMP ROPE SESSION COMPLETE</h2>
             <div style="margin: 20px 0; font-size: 24px;">
                 <div style="margin: 10px 0;">Total Jumps: <strong id="stat-jumps" style="color: #ff5722;">0</strong></div>
+                <div id="stat-goal-summary" style="margin: 10px 0; display: none; font-size: 18px; color: rgba(255,255,255,0.7);">
+                    Completed <strong id="stat-sets-done" style="color: white;">0</strong> of <strong id="stat-sets-total" style="color: white;">0</strong> Sets
+                </div>
                 <div class="stat-item">
                 <span class="stat-label">Duration:</span>
                 <span id="stat-time" class="stat-value">00:00</span>
@@ -196,6 +372,27 @@ canvas {
                 <span class="stat-label">Estimated Distance:</span>
                 <span id="stat-dist" class="stat-value" style="color: #ff5722; font-weight: bold;">0 mi</span>
             </div>
+            
+            <div id="restart-goal-settings" class="goal-settings" style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <div class="goal-toggle-wrapper" style="justify-content: center;">
+                    <span>Set Goal for Next Jump Rope Session</span>
+                    <label class="switch">
+                        <input type="checkbox" id="restart-goal-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="restart-goal-inputs" class="goal-inputs" style="justify-content: center;">
+                    <div class="goal-input-group">
+                        <label for="restart-target-reps">Reps per set</label>
+                        <input type="number" id="restart-target-reps" value="25" min="1">
+                    </div>
+                    <div class="goal-input-group">
+                        <label for="restart-target-sets">Sets</label>
+                        <input type="number" id="restart-target-sets" value="2" min="1">
+                    </div>
+                </div>
+            </div>
+
             <button id="restart-btn" class="start-button" style="margin-top: 25px;">start new jump rope session</button>
         </div>
     </div>
@@ -212,6 +409,7 @@ const ctx = canvas.getContext('2d');
 const jumpCountEl = document.getElementById('jump-count');
 const timerEl = document.getElementById('timer');
 const doneBtn = document.getElementById('done-btn');
+const pauseBtn = document.getElementById('pause-btn');
 const statsOverlay = document.getElementById('stats-overlay');
 const statJumps = document.getElementById('stat-jumps');
 const statTime = document.getElementById('stat-time');
@@ -221,6 +419,23 @@ const restartBtn = document.getElementById('restart-btn');
 const startBtn = document.getElementById('start-btn');
 const statusText = document.getElementById('status');
 const uiPanel = document.querySelector('.ui-panel');
+
+// Goal Mode Elements
+const goalToggle = document.getElementById('goal-toggle');
+const goalInputs = document.getElementById('goal-inputs');
+const goalSettings = document.getElementById('goal-settings');
+const targetRepsInput = document.getElementById('target-reps');
+const targetSetsInput = document.getElementById('target-sets');
+const setProgressEl = document.getElementById('set-progress');
+const setCompleteOverlay = document.getElementById('set-complete-overlay');
+const setCompleteTitle = document.getElementById('set-complete-title');
+const continueSetBtn = document.getElementById('continue-set-btn');
+
+// Restart Goal Elements
+const restartGoalToggle = document.getElementById('restart-goal-toggle');
+const restartGoalInputs = document.getElementById('restart-goal-inputs');
+const restartTargetRepsInput = document.getElementById('restart-target-reps');
+const restartTargetSetsInput = document.getElementById('restart-target-sets');
 
 let poseLandmarker;
 let runningMode = "VIDEO";
@@ -232,9 +447,40 @@ let jumpCount = 0;
 let isJumping = false;
 let jumpFrames = 0;
 let baselineY = null;
+let baselineTorsoHeight = null;
 let jumpStartTorso = 0;
 let sessionStartTime = null;
 let timerInterval = null;
+let isPaused = false;
+let accumulatedTime = 0;
+let isCountdownActive = false;
+let isCountdownPaused = false;
+let currentCountdownValue = 0;
+let countInterval = null;
+
+// Goal Mode State
+let goalMode = false;
+let targetReps = 0;
+let targetSets = 0;
+let currentReps = 0;
+let currentSet = 1;
+
+// Goal Toggle Logic
+goalToggle.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        goalInputs.classList.add('show');
+    } else {
+        goalInputs.classList.remove('show');
+    }
+});
+
+restartGoalToggle.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        restartGoalInputs.classList.add('show');
+    } else {
+        restartGoalInputs.classList.remove('show');
+    }
+});
 
 const POSE_CONNECTIONS = [
     // Stick figure
@@ -261,10 +507,47 @@ async function initializeModel() {
         });
         statusText.innerText = "Ready!";
         startBtn.style.display = "block";
+        goalSettings.style.display = "flex";
     } catch (error) {
         console.error(error);
         statusText.innerText = "Error loading model. Check console.";
     }
+}
+
+function startCountdownInterval() {
+    const overlay = document.getElementById('countdown-overlay');
+    const container = document.getElementById('countdown-container');
+    const numEl = document.getElementById('countdown-number');
+    
+    countInterval = setInterval(() => {
+        currentCountdownValue--;
+        if (currentCountdownValue > 0) {
+            numEl.innerText = currentCountdownValue;
+        } else {
+            clearInterval(countInterval);
+            isCountdownActive = false;
+            overlay.style.display = "none";
+            container.style.display = "none";
+            isPaused = false;
+            sessionStartTime = Date.now();
+        }
+    }, 1000);
+}
+
+function startSessionWithCountdown() {
+    isPaused = true;
+    isCountdownActive = true;
+    isCountdownPaused = false;
+    currentCountdownValue = 10;
+    
+    const overlay = document.getElementById('countdown-overlay');
+    const container = document.getElementById('countdown-container');
+    const numEl = document.getElementById('countdown-number');
+    overlay.style.display = "block";
+    container.style.display = "flex";
+    numEl.innerText = currentCountdownValue;
+    
+    startCountdownInterval();
 }
 
 initializeModel();
@@ -284,13 +567,45 @@ startBtn.addEventListener('click', async () => {
         statusText.style.display = "none";
         timerEl.style.display = "block";
         doneBtn.style.display = "block";
-        sessionStartTime = Date.now();
+        pauseBtn.style.display = "block";
+        pauseBtn.innerText = "Pause Session";
+        pauseBtn.style.background = "#ff9800";
+        accumulatedTime = 0;
+        
+        // Goal Mode Initialization
+        goalMode = goalToggle.checked;
+        if (goalMode) {
+            targetReps = parseInt(targetRepsInput.value, 10) || 0;
+            targetSets = parseInt(targetSetsInput.value, 10) || 0;
+            if (targetReps <= 0 || targetSets <= 0) {
+                goalMode = false;
+            }
+        }
+        
+        currentReps = 0;
+        currentSet = 1;
+        jumpCount = 0;
+        
+        if (goalMode) {
+            setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
+            setProgressEl.style.display = "block";
+            jumpCountEl.innerText = `${currentReps} / ${targetReps}`;
+        } else {
+            setProgressEl.style.display = "none";
+            jumpCountEl.innerText = jumpCount;
+        }
+        
+        goalSettings.style.display = "none";
         timerInterval = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-            const secs = String(elapsed % 60).padStart(2, '0');
-            timerEl.innerText = `${mins}:${secs}`;
+            if (!isPaused) {
+                const elapsed = Math.floor((accumulatedTime + (Date.now() - sessionStartTime)) / 1000);
+                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const secs = String(elapsed % 60).padStart(2, '0');
+                timerEl.innerText = `${mins}:${secs}`;
+            }
         }, 1000);
+        
+        startSessionWithCountdown();
     } catch (err) {
         console.error(err);
         statusText.innerText = "Camera access denied or unavailable.";
@@ -320,12 +635,16 @@ function predictWebcam() {
                 const landmarks = result.landmarks[0];
                 drawWireframe(landmarks, canvas.width, canvas.height);
                 processJumpLogic(landmarks);
+            } else {
+                baselineY = null;
+                baselineTorsoHeight = null;
+                isJumping = false;
             }
         });
     }
     
-    // Call this function again to keep predicting when the browser is ready
-    window.requestAnimationFrame(predictWebcam);
+    // Use setTimeout instead of requestAnimationFrame so tracking doesn't stall when the window loses focus (e.g. notifications)
+    setTimeout(predictWebcam, 33);
 }
 
 function drawWireframe(landmarks, w, h) {
@@ -333,13 +652,18 @@ function drawWireframe(landmarks, w, h) {
     ctx.strokeStyle = "#ff5722"; // Neon Orange
     ctx.fillStyle = "#ff5722";
 
-    // 1. Draw Bounding Box (Green)
-    const xCoords = landmarks.map(lm => lm.x * w);
-    const yCoords = landmarks.map(lm => lm.y * h);
-    const xMin = Math.max(0, Math.min(...xCoords));
-    const xMax = Math.min(w, Math.max(...xCoords));
-    const yMin = Math.max(0, Math.min(...yCoords));
-    const yMax = Math.min(h, Math.max(...yCoords));
+    // Filter out landmarks that the AI guesses are way off-screen (which causes the bounding box to stretch/lock to the edges)
+    const onScreenLms = landmarks.filter(lm => lm.y >= -0.1 && lm.y <= 1.1 && lm.x >= -0.1 && lm.x <= 1.1);
+    const boxLms = onScreenLms.length > 0 ? onScreenLms : landmarks;
+
+    // 1. Draw Bounding Box (Green) around on-screen body parts
+    const xCoords = boxLms.map(lm => lm.x * w);
+    const yCoords = boxLms.map(lm => lm.y * h);
+    const padding = 20;
+    const xMin = Math.max(0, Math.min(...xCoords) - padding);
+    const xMax = Math.min(w, Math.max(...xCoords) + padding);
+    const yMin = Math.max(0, Math.min(...yCoords) - padding);
+    const yMax = Math.min(h, Math.max(...yCoords) + padding);
     
     ctx.strokeStyle = "#00ff00";
     ctx.lineWidth = 3;
@@ -347,7 +671,7 @@ function drawWireframe(landmarks, w, h) {
     
     ctx.strokeStyle = "#ff5722";
 
-    // 2. Draw connections
+    // 2. Draw connections (draw all of them, they will just clip if off-screen)
     for (const [startIdx, endIdx] of POSE_CONNECTIONS) {
         const start = landmarks[startIdx];
         const end = landmarks[endIdx];
@@ -370,61 +694,132 @@ function drawWireframe(landmarks, w, h) {
 }
 
 function processJumpLogic(landmarks) {
-    const leftHip = landmarks[23].y;
-    const rightHip = landmarks[24].y;
-    const avgHipY = (leftHip + rightHip) / 2;
+    const leftHipLM = landmarks[23];
+    const rightHipLM = landmarks[24];
+    const leftShoulderLM = landmarks[11];
+    const rightShoulderLM = landmarks[12];
+    const noseLM = landmarks[0];
 
-    const leftShoulder = landmarks[11].y;
-    const rightShoulder = landmarks[12].y;
-    const avgShoulderY = (leftShoulder + rightShoulder) / 2;
-
-    const torsoHeight = Math.max(0.05, avgHipY - avgShoulderY);
-
-    if (baselineY === null) {
-        baselineY = avgHipY;
+    const minVis = 0.55;
+    
+    // Check if shoulders are visible (minimum requirement for tracking)
+    if (!leftShoulderLM || !rightShoulderLM || leftShoulderLM.visibility < minVis || rightShoulderLM.visibility < minVis) {
+        baselineY = null;
+        baselineTorsoHeight = null;
+        isJumping = false;
+        return;
     }
 
-    const jumpThreshold = torsoHeight * 0.20;
+    let trackerY;
+    let referenceHeight;
 
-    if (avgHipY < (baselineY - jumpThreshold)) {
+    const hipsVisible = leftHipLM && rightHipLM && leftHipLM.visibility >= minVis && rightHipLM.visibility >= minVis;
+
+    if (hipsVisible) {
+        // Standard tracking (full body)
+        trackerY = (leftHipLM.y + rightHipLM.y) / 2;
+        const avgShoulderY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
+        referenceHeight = Math.max(0.05, trackerY - avgShoulderY);
+    } else if (noseLM && noseLM.visibility >= minVis) {
+        // Fallback to tracking shoulders if hips are off-screen (half body)
+        trackerY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
+        referenceHeight = Math.max(0.05, trackerY - noseLM.y) * 1.5; // Approximate torso scale
+    } else {
+        // Shoulders only (extreme close up)
+        trackerY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
+        const shoulderWidth = Math.abs(leftShoulderLM.x - rightShoulderLM.x);
+        referenceHeight = Math.max(0.05, shoulderWidth * 1.5);
+    }
+
+    // If paused (e.g. during countdown), continuously calibrate baseline so it's accurate when session starts
+    if (isPaused || isCountdownActive) {
+        baselineY = trackerY;
+        baselineTorsoHeight = referenceHeight;
+        isJumping = false;
+        return;
+    }
+    if (baselineY === null || baselineTorsoHeight === null) {
+        baselineY = trackerY;
+        baselineTorsoHeight = referenceHeight;
+    }
+
+    // Auto-calibration: reset baseline if depth changes significantly (moving forward/backward)
+    const torsoDiff = Math.abs(referenceHeight - baselineTorsoHeight);
+    if (torsoDiff / baselineTorsoHeight > 0.15 && torsoDiff > 0.015) {
+        baselineY = trackerY;
+        baselineTorsoHeight = referenceHeight;
+        isJumping = false;
+        return;
+    }
+
+    const jumpThreshold = Math.max(referenceHeight * 0.15, 0.015);
+
+    if (trackerY < (baselineY - jumpThreshold)) {
         if (!isJumping) {
             isJumping = true;
             jumpFrames = 0;
-            jumpStartTorso = torsoHeight;
+            jumpStartTorso = referenceHeight;
         } else {
             jumpFrames++;
             // Cancel fake jumps (too long in air)
             if (jumpFrames > 20) {
                 isJumping = false;
-                baselineY = avgHipY;
+                baselineY = trackerY;
+                baselineTorsoHeight = referenceHeight;
             }
             // Cancel fake jumps (leaning over or walking changes torso size)
-            if (Math.abs(torsoHeight - jumpStartTorso) / jumpStartTorso > 0.15) {
+            const jumpTorsoDiff = Math.abs(referenceHeight - jumpStartTorso);
+            if (jumpTorsoDiff / jumpStartTorso > 0.15 && jumpTorsoDiff > 0.015) {
                 isJumping = false;
-                baselineY = avgHipY;
+                baselineY = trackerY;
+                baselineTorsoHeight = referenceHeight;
             }
         }
     } else {
         if (isJumping) {
-            if (avgHipY > (baselineY - jumpThreshold * 0.5)) {
-                if (jumpFrames >= 4) {
+            // Require them to drop almost all the way back to the baseline to register a landing
+            const landingThreshold = Math.max(jumpThreshold * 0.2, 0.005);
+            if (trackerY > (baselineY - landingThreshold)) {
+                if (jumpFrames >= 3) {
                     jumpCount++;
                     updateUI();
                 }
                 isJumping = false;
             }
         } else {
-            if (avgHipY > baselineY) {
-                baselineY = baselineY * 0.5 + avgHipY * 0.5;
-            } else {
-                baselineY = baselineY * 0.95 + avgHipY * 0.05;
-            }
+            // Update baseline extremely slowly to avoid tracking pre-jump squats as the new baseline
+            baselineY = baselineY * 0.98 + trackerY * 0.02;
+            baselineTorsoHeight = baselineTorsoHeight * 0.98 + referenceHeight * 0.02;
         }
     }
 }
 
 function updateUI() {
-    jumpCountEl.innerText = jumpCount;
+    if (goalMode) {
+        currentReps++;
+        jumpCountEl.innerText = `${currentReps} / ${targetReps}`;
+        
+        if (currentReps >= targetReps) {
+            // Set Complete
+            isPaused = true;
+            accumulatedTime += Date.now() - sessionStartTime;
+            
+            if (currentSet >= targetSets) {
+                // Workout Complete
+                setCompleteTitle.innerText = "WORKOUT COMPLETE";
+                setCompleteTitle.style.color = "#4caf50";
+                continueSetBtn.innerText = "View Final Stats";
+            } else {
+                setCompleteTitle.innerText = `SET ${currentSet} COMPLETE`;
+                setCompleteTitle.style.color = "#ff5722";
+                continueSetBtn.innerText = "Continue to Next Set";
+            }
+            setCompleteOverlay.style.display = "flex";
+        }
+    } else {
+        jumpCountEl.innerText = jumpCount;
+    }
+
     uiPanel.classList.add('bump');
     setTimeout(() => {
         uiPanel.classList.remove('bump');
@@ -433,10 +828,20 @@ function updateUI() {
 
 doneBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
+    if (isCountdownActive) {
+        clearInterval(countInterval);
+        isCountdownActive = false;
+        document.getElementById('countdown-overlay').style.display = "none";
+        document.getElementById('countdown-container').style.display = "none";
+    }
+    
     cameraActive = false;
     video.pause();
+    pauseBtn.style.display = "none";
+    statusText.style.display = "none";
     
-    const elapsedSecs = Math.max(1, Math.floor((Date.now() - sessionStartTime) / 1000));
+    const elapsedMs = accumulatedTime + (isPaused ? 0 : (Date.now() - sessionStartTime));
+    const elapsedSecs = Math.max(1, Math.floor(elapsedMs / 1000));
     const mins = String(Math.floor(elapsedSecs / 60)).padStart(2, '0');
     const secs = String(elapsedSecs % 60).padStart(2, '0');
     const jpm = Math.round(jumpCount / (elapsedSecs / 60));
@@ -449,25 +854,138 @@ doneBtn.addEventListener('click', () => {
     statSpeed.innerText = jpm;
     statDist.innerText = `${distanceMiles} mi`;
     
+    const statGoalSummary = document.getElementById('stat-goal-summary');
+    const statSetsDone = document.getElementById('stat-sets-done');
+    const statSetsTotal = document.getElementById('stat-sets-total');
+    
+    if (goalMode) {
+        // currentSet might be 1 when they quit, if they didn't finish the 1st set, it should show 0 completed.
+        const completedSets = (currentReps >= targetReps) ? currentSet : (currentSet - 1);
+        statSetsDone.innerText = completedSets;
+        statSetsTotal.innerText = targetSets;
+        statGoalSummary.style.display = "block";
+        
+        // Sync restart overlay toggle
+        restartGoalToggle.checked = true;
+        restartGoalInputs.classList.add('show');
+        restartTargetRepsInput.value = targetReps;
+        restartTargetSetsInput.value = targetSets;
+    } else {
+        statGoalSummary.style.display = "none";
+        
+        // Sync restart overlay toggle
+        restartGoalToggle.checked = false;
+        restartGoalInputs.classList.remove('show');
+    }
+    
     statsOverlay.style.display = "flex";
+});
+
+pauseBtn.addEventListener('click', () => {
+    if (isCountdownActive) {
+        if (!isCountdownPaused) {
+            // Pause the countdown
+            isCountdownPaused = true;
+            clearInterval(countInterval);
+            pauseBtn.innerText = "Resume Session";
+            pauseBtn.style.background = "#4caf50";
+            statusText.style.display = "block";
+            statusText.innerText = "Countdown Paused";
+        } else {
+            // Resume the countdown
+            isCountdownPaused = false;
+            startCountdownInterval();
+            pauseBtn.innerText = "Pause Session";
+            pauseBtn.style.background = "#ff9800";
+            statusText.style.display = "none";
+        }
+        return;
+    }
+
+    if (!isPaused) {
+        // Pause the session
+        isPaused = true;
+        accumulatedTime += Date.now() - sessionStartTime;
+        pauseBtn.innerText = "Resume Session";
+        pauseBtn.style.background = "#4caf50"; // Turn green to indicate resume action
+        statusText.style.display = "block";
+        statusText.innerText = "Session Paused";
+    } else {
+        // Resume the session
+        isPaused = false;
+        sessionStartTime = Date.now();
+        pauseBtn.innerText = "Pause Session";
+        pauseBtn.style.background = "#ff9800"; // Back to orange
+        statusText.style.display = "none";
+    }
+});
+
+continueSetBtn.addEventListener('click', () => {
+    setCompleteOverlay.style.display = "none";
+    if (currentSet >= targetSets) {
+        // If workout is complete, act like done button
+        doneBtn.click();
+    } else {
+        // Continue to next set
+        currentSet++;
+        currentReps = 0;
+        setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
+        jumpCountEl.innerText = `${currentReps} / ${targetReps}`;
+        
+        pauseBtn.innerText = "Pause Session";
+        pauseBtn.style.background = "#ff9800";
+        statusText.style.display = "none";
+        
+        startSessionWithCountdown();
+    }
 });
 
 restartBtn.addEventListener('click', () => {
     statsOverlay.style.display = "none";
     jumpCount = 0;
-    updateUI();
     baselineY = null;
     isJumping = false;
+    accumulatedTime = 0;
+    
+    // Read new goal settings from the restart overlay
+    goalMode = restartGoalToggle.checked;
+    if (goalMode) {
+        targetReps = parseInt(restartTargetRepsInput.value, 10) || 0;
+        targetSets = parseInt(restartTargetSetsInput.value, 10) || 0;
+        if (targetReps <= 0 || targetSets <= 0) {
+            goalMode = false;
+        }
+    }
+    
+    if (goalMode) {
+        currentReps = 0;
+        currentSet = 1;
+        setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
+        setProgressEl.style.display = "block";
+        jumpCountEl.innerText = `${currentReps} / ${targetReps}`;
+    } else {
+        setProgressEl.style.display = "none";
+        jumpCountEl.innerText = jumpCount;
+    }
+    
+    updateUI();
     
     video.play();
     cameraActive = true;
-    sessionStartTime = Date.now();
+    pauseBtn.style.display = "block";
+    pauseBtn.innerText = "Pause Session";
+    pauseBtn.style.background = "#ff9800";
+    statusText.style.display = "none";
+    timerEl.innerText = "00:00";
     timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-        const secs = String(elapsed % 60).padStart(2, '0');
-        timerEl.innerText = `${mins}:${secs}`;
+        if (!isPaused) {
+            const elapsed = Math.floor((accumulatedTime + (Date.now() - sessionStartTime)) / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            timerEl.innerText = `${mins}:${secs}`;
+        }
     }, 1000);
+    startSessionWithCountdown();
     predictWebcam();
 });
     </script>
