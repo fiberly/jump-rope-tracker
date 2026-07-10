@@ -850,8 +850,16 @@ function processJumpLogic(landmarks) {
                 isJumping = false;
             }
         } else {
-            // Update baseline extremely slowly to avoid tracking pre-jump squats as the new baseline
-            baselineY = baselineY * 0.98 + trackerY * 0.02;
+            // Update baseline asymmetrically to prevent false jumps when straightening back after a set
+            if (trackerY < baselineY) {
+                // Moving UP (standing taller or staying light on toes). 
+                // Use original 0.02 rate so it doesn't chase fast jumps too quickly.
+                baselineY = baselineY * 0.98 + trackerY * 0.02;
+            } else {
+                // Moving DOWN (squatting/landing). Adapt very slowly to keep standing baseline stable.
+                // This prevents slouching from dragging the baseline down, which causes false jumps when standing up.
+                baselineY = baselineY * 0.998 + trackerY * 0.002;
+            }
             baselineTorsoHeight = baselineTorsoHeight * 0.98 + referenceHeight * 0.02;
         }
     }
