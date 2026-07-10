@@ -341,8 +341,9 @@ input:checked + .slider:before {
     <div id="set-complete-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20,20,20,0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 30; justify-content: center; align-items: center; flex-direction: column;">
         <div style="background: rgba(40,40,40,0.9); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white;">
             <h2 id="set-complete-title" style="margin-top: 0; color: #ff5722; letter-spacing: 2px;">SET 1 COMPLETE</h2>
+            <div id="set-complete-progress-text" style="font-size: 20px; font-weight: bold; margin-top: 10px; color: white;">Set 1 out of 3 completed</div>
             <div style="margin: 20px 0; font-size: 18px; color: rgba(255, 255, 255, 0.7);">
-                Take a breather. You're doing great.
+                Take a breather if you want.
             </div>
             <button id="continue-set-btn" class="start-button" style="margin-top: 25px;">Continue to Next Set</button>
         </div>
@@ -439,6 +440,7 @@ const targetSetsInput = document.getElementById('target-sets');
 const setProgressEl = document.getElementById('set-progress');
 const setCompleteOverlay = document.getElementById('set-complete-overlay');
 const setCompleteTitle = document.getElementById('set-complete-title');
+const setCompleteProgressText = document.getElementById('set-complete-progress-text');
 const continueSetBtn = document.getElementById('continue-set-btn');
 
 // Restart Goal Elements
@@ -467,6 +469,8 @@ let isCountdownActive = false;
 let isCountdownPaused = false;
 let currentCountdownValue = 0;
 let countInterval = null;
+let lostTrackingFrames = 0;
+let depthChangeFrames = 0;
 
 // Goal Mode State
 let goalMode = false;
@@ -595,6 +599,8 @@ startBtn.addEventListener('click', async () => {
         currentReps = 0;
         currentSet = 1;
         jumpCount = 0;
+        lostTrackingFrames = 0;
+        depthChangeFrames = 0;
         
         if (goalMode) {
             setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
@@ -742,15 +748,19 @@ function processJumpLogic(landmarks) {
     const rightShoulderLM = landmarks[12];
     const noseLM = landmarks[0];
 
-    const minVis = 0.55;
+    const minVis = 0.45; // Lowered from 0.55 to be more forgiving in harsh lighting (like sun glare)
     
     // Check if shoulders are visible (minimum requirement for tracking)
     if (!leftShoulderLM || !rightShoulderLM || leftShoulderLM.visibility < minVis || rightShoulderLM.visibility < minVis) {
-        baselineY = null;
-        baselineTorsoHeight = null;
-        isJumping = false;
+        lostTrackingFrames++;
+        if (lostTrackingFrames > 10) { // Require ~300ms of lost tracking before resetting completely
+            baselineY = null;
+            baselineTorsoHeight = null;
+            isJumping = false;
+        }
         return;
     }
+    lostTrackingFrames = 0;
 
     let trackerY;
     let referenceHeight;
@@ -758,14 +768,18 @@ function processJumpLogic(landmarks) {
     const hipsVisible = leftHipLM && rightHipLM && leftHipLM.visibility >= minVis && rightHipLM.visibility >= minVis;
 
     if (hipsVisible) {
-        // Standard tracking (full body)
-        trackerY = (leftHipLM.y + rightHipLM.y) / 2;
+        // Standard tracking (full body): Use the center of the torso as the tracking point
+        // This prevents false jumps from just raising the hips/waist or shrugging shoulders
+        const avgHipY = (leftHipLM.y + rightHipLM.y) / 2;
         const avgShoulderY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
-        referenceHeight = Math.max(0.05, trackerY - avgShoulderY);
+        trackerY = (avgHipY + avgShoulderY) / 2; 
+        referenceHeight = Math.max(0.05, avgHipY - avgShoulderY);
     } else if (noseLM && noseLM.visibility >= minVis) {
-        // Fallback to tracking shoulders if hips are off-screen (half body)
-        trackerY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
-        referenceHeight = Math.max(0.05, trackerY - noseLM.y) * 1.5; // Approximate torso scale
+        // Fallback (half body): Use the center between shoulders and nose
+        // Prevents false jumps from just shrugging shoulders
+        const avgShoulderY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
+        trackerY = (avgShoulderY + noseLM.y) / 2;
+        referenceHeight = Math.max(0.05, avgShoulderY - noseLM.y) * 1.5; // Approximate torso scale
     } else {
         // Shoulders only (extreme close up)
         trackerY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
@@ -778,21 +792,28 @@ function processJumpLogic(landmarks) {
         baselineY = trackerY;
         baselineTorsoHeight = referenceHeight;
         isJumping = false;
+        depthChangeFrames = 0;
         return;
     }
     if (baselineY === null || baselineTorsoHeight === null) {
         baselineY = trackerY;
         baselineTorsoHeight = referenceHeight;
+        depthChangeFrames = 0;
     }
 
     // Auto-calibration: reset baseline if depth changes significantly (moving forward/backward)
     const torsoDiff = Math.abs(referenceHeight - baselineTorsoHeight);
     if (torsoDiff / baselineTorsoHeight > 0.15 && torsoDiff > 0.015) {
-        baselineY = trackerY;
-        baselineTorsoHeight = referenceHeight;
-        isJumping = false;
+        depthChangeFrames++;
+        if (depthChangeFrames > 5) { // Require ~150ms of sustained depth change to reset to prevent glitches
+            baselineY = trackerY;
+            baselineTorsoHeight = referenceHeight;
+            isJumping = false;
+            depthChangeFrames = 0;
+        }
         return;
     }
+    depthChangeFrames = 0;
 
     const jumpThreshold = Math.max(referenceHeight * 0.10, 0.015);
 
@@ -845,6 +866,8 @@ function updateUI() {
             // Set Complete
             isPaused = true;
             accumulatedTime += Date.now() - sessionStartTime;
+            
+            setCompleteProgressText.innerText = `Set ${currentSet} out of ${targetSets} completed`;
             
             if (currentSet >= targetSets) {
                 // Workout Complete
@@ -1000,6 +1023,8 @@ restartBtn.addEventListener('click', () => {
     baselineY = null;
     isJumping = false;
     accumulatedTime = 0;
+    lostTrackingFrames = 0;
+    depthChangeFrames = 0;
     
     // Read new goal settings from the restart overlay
     goalMode = restartGoalToggle.checked;
@@ -1021,8 +1046,6 @@ restartBtn.addEventListener('click', () => {
         setProgressEl.style.display = "none";
         jumpCountEl.innerText = jumpCount;
     }
-    
-    updateUI();
     
     navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
