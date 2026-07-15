@@ -338,14 +338,15 @@ input:checked + .slider:before {
     </div>
 
     <!-- Set Complete Overlay -->
-    <div id="set-complete-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20,20,20,0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 30; justify-content: center; align-items: center; flex-direction: column;">
+    <div id="set-complete-overlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20,20,20,0.25); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 30; justify-content: center; align-items: center; flex-direction: column;">
         <div style="background: rgba(40,40,40,0.9); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white;">
             <h2 id="set-complete-title" style="margin-top: 0; color: #ff5722; letter-spacing: 2px;">SET 1 COMPLETE</h2>
             <div id="set-complete-progress-text" style="font-size: 20px; font-weight: bold; margin-top: 10px; color: white;">Set 1 out of 3 completed</div>
-            <div style="margin: 20px 0; font-size: 18px; color: rgba(255, 255, 255, 0.7);">
+            <div style="margin: 20px 0 10px 0; font-size: 18px; color: rgba(255, 255, 255, 0.7);">
                 Take a breather if you want.
             </div>
-            <button id="continue-set-btn" class="start-button" style="margin-top: 25px;">Continue to Next Set</button>
+            <div id="rest-timer" style="font-size: 32px; font-weight: bold; margin-bottom: 10px; color: #ff9800; font-variant-numeric: tabular-nums;">00:00</div>
+            <button id="continue-set-btn" class="start-button" style="margin-top: 15px;">Continue to Next Set</button>
         </div>
     </div>
 
@@ -368,7 +369,11 @@ input:checked + .slider:before {
                     Completed <strong id="stat-sets-done" style="color: white;">0</strong> of <strong id="stat-sets-total" style="color: white;">0</strong> Sets
                 </div>
                 <div class="stat-item">
-                <span class="stat-label">Duration:</span>
+                <span class="stat-label">Total Time:</span>
+                <span id="stat-total-time" class="stat-value">00:00</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Active Time:</span>
                 <span id="stat-time" class="stat-value">00:00</span>
             </div>
             <div class="stat-item">
@@ -472,6 +477,12 @@ let countInterval = null;
 let lostTrackingFrames = 0;
 let depthChangeFrames = 0;
 
+let totalSessionStartTime = null;
+let totalSessionPauseOffset = 0;
+let explicitPauseStartTime = null;
+let isResting = false;
+let restStartTime = null;
+
 // Goal Mode State
 let goalMode = false;
 let targetReps = 0;
@@ -544,6 +555,9 @@ function startCountdownInterval() {
             container.style.display = "none";
             isPaused = false;
             sessionStartTime = Date.now();
+            if (!totalSessionStartTime) {
+                totalSessionStartTime = Date.now();
+            }
         }
     }, 1000);
 }
@@ -585,6 +599,10 @@ startBtn.addEventListener('click', async () => {
         pauseBtn.innerText = "Pause Session";
         pauseBtn.style.background = "#ff9800";
         accumulatedTime = 0;
+        totalSessionStartTime = null;
+        totalSessionPauseOffset = 0;
+        explicitPauseStartTime = null;
+        isResting = false;
         
         // Goal Mode Initialization
         goalMode = goalToggle.checked;
@@ -618,6 +636,12 @@ startBtn.addEventListener('click', async () => {
                 const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
                 const secs = String(elapsed % 60).padStart(2, '0');
                 timerEl.innerText = `${mins}:${secs}`;
+            }
+            if (isResting && restStartTime) {
+                const restElapsed = Math.floor((Date.now() - restStartTime) / 1000);
+                const rMins = String(Math.floor(restElapsed / 60)).padStart(2, '0');
+                const rSecs = String(restElapsed % 60).padStart(2, '0');
+                document.getElementById('rest-timer').innerText = `${rMins}:${rSecs}`;
             }
         }, 1000);
         
@@ -748,7 +772,7 @@ function processJumpLogic(landmarks) {
     const rightShoulderLM = landmarks[12];
     const noseLM = landmarks[0];
 
-    const minVis = 0.45; // Lowered from 0.55 to be more forgiving in harsh lighting (like sun glare)
+    const minVis = 0.30; // Lowered to be more forgiving in harsh lighting or when standing further away
     
     // Check if shoulders are visible (minimum requirement for tracking)
     if (!leftShoulderLM || !rightShoulderLM || leftShoulderLM.visibility < minVis || rightShoulderLM.visibility < minVis) {
@@ -773,18 +797,18 @@ function processJumpLogic(landmarks) {
         const avgHipY = (leftHipLM.y + rightHipLM.y) / 2;
         const avgShoulderY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
         trackerY = (avgHipY + avgShoulderY) / 2; 
-        referenceHeight = Math.max(0.05, avgHipY - avgShoulderY);
+        referenceHeight = Math.max(0.005, avgHipY - avgShoulderY);
     } else if (noseLM && noseLM.visibility >= minVis) {
         // Fallback (half body): Use the center between shoulders and nose
         // Prevents false jumps from just shrugging shoulders
         const avgShoulderY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
         trackerY = (avgShoulderY + noseLM.y) / 2;
-        referenceHeight = Math.max(0.05, avgShoulderY - noseLM.y) * 1.5; // Approximate torso scale
+        referenceHeight = Math.max(0.005, avgShoulderY - noseLM.y) * 1.5; // Approximate torso scale
     } else {
         // Shoulders only (extreme close up)
         trackerY = (leftShoulderLM.y + rightShoulderLM.y) / 2;
         const shoulderWidth = Math.abs(leftShoulderLM.x - rightShoulderLM.x);
-        referenceHeight = Math.max(0.05, shoulderWidth * 1.5);
+        referenceHeight = Math.max(0.005, shoulderWidth * 1.5);
     }
 
     // If paused (e.g. during countdown or out of frame), continuously calibrate baseline so it's accurate when session starts
@@ -803,7 +827,7 @@ function processJumpLogic(landmarks) {
 
     // Auto-calibration: reset baseline if depth changes significantly (moving forward/backward)
     const torsoDiff = Math.abs(referenceHeight - baselineTorsoHeight);
-    if (torsoDiff / baselineTorsoHeight > 0.15 && torsoDiff > 0.015) {
+    if (torsoDiff / baselineTorsoHeight > 0.15 && torsoDiff > 0.001) {
         depthChangeFrames++;
         if (depthChangeFrames > 5) { // Require ~150ms of sustained depth change to reset to prevent glitches
             baselineY = trackerY;
@@ -815,7 +839,7 @@ function processJumpLogic(landmarks) {
     }
     depthChangeFrames = 0;
 
-    const jumpThreshold = Math.max(referenceHeight * 0.10, 0.015);
+    const jumpThreshold = Math.max(referenceHeight * 0.08, 0.001);
 
     if (trackerY < (baselineY - jumpThreshold)) {
         if (!isJumping) {
@@ -832,7 +856,7 @@ function processJumpLogic(landmarks) {
             }
             // Cancel fake jumps (leaning over or walking changes torso size)
             const jumpTorsoDiff = Math.abs(referenceHeight - jumpStartTorso);
-            if (jumpTorsoDiff / jumpStartTorso > 0.15 && jumpTorsoDiff > 0.015) {
+            if (jumpTorsoDiff / jumpStartTorso > 0.15 && jumpTorsoDiff > 0.001) {
                 isJumping = false;
                 baselineY = trackerY;
                 baselineTorsoHeight = referenceHeight;
@@ -841,7 +865,7 @@ function processJumpLogic(landmarks) {
     } else {
         if (isJumping) {
             // Drop halfway back down to register a landing (allows staying light on toes)
-            const landingThreshold = Math.max(jumpThreshold * 0.5, 0.01);
+            const landingThreshold = Math.max(jumpThreshold * 0.5, 0.0005);
             if (trackerY > (baselineY - landingThreshold)) {
                 if (jumpFrames >= 2) {
                     jumpCount++;
@@ -873,11 +897,16 @@ function updateUI() {
         if (currentReps >= targetReps) {
             // Set Complete
             isPaused = true;
+            isResting = true;
+            restStartTime = Date.now();
+            document.getElementById('rest-timer').innerText = "00:00";
             accumulatedTime += Date.now() - sessionStartTime;
             
             setCompleteProgressText.innerText = `Set ${currentSet} out of ${targetSets} completed`;
             
             if (currentSet >= targetSets) {
+                // Stop total time
+                explicitPauseStartTime = Date.now();
                 // Workout Complete
                 setCompleteTitle.innerText = "WORKOUT COMPLETE";
                 setCompleteTitle.style.color = "#4caf50";
@@ -921,6 +950,19 @@ doneBtn.addEventListener('click', () => {
     pauseBtn.style.display = "none";
     statusText.style.display = "none";
     
+    if (explicitPauseStartTime) {
+        totalSessionPauseOffset += Date.now() - explicitPauseStartTime;
+        explicitPauseStartTime = null;
+    }
+    
+    let totalElapsedMs = 0;
+    if (totalSessionStartTime) {
+        totalElapsedMs = Date.now() - totalSessionStartTime - totalSessionPauseOffset;
+    }
+    const totalElapsedSecs = Math.max(1, Math.floor(totalElapsedMs / 1000));
+    const tMins = String(Math.floor(totalElapsedSecs / 60)).padStart(2, '0');
+    const tSecs = String(totalElapsedSecs % 60).padStart(2, '0');
+    
     const elapsedMs = accumulatedTime + (isPaused ? 0 : (Date.now() - sessionStartTime));
     const elapsedSecs = Math.max(1, Math.floor(elapsedMs / 1000));
     const mins = String(Math.floor(elapsedSecs / 60)).padStart(2, '0');
@@ -931,6 +973,7 @@ doneBtn.addEventListener('click', () => {
     const distanceMiles = (jumpCount / 1200).toFixed(2);
     
     statJumps.innerText = jumpCount;
+    document.getElementById('stat-total-time').innerText = `${tMins}:${tSecs}`;
     statTime.innerText = `${mins}:${secs}`;
     statSpeed.innerText = jpm;
     statDist.innerText = `${distanceMiles} mi`;
@@ -967,6 +1010,7 @@ pauseBtn.addEventListener('click', () => {
         if (!isCountdownPaused) {
             // Pause the countdown
             isCountdownPaused = true;
+            explicitPauseStartTime = Date.now();
             clearInterval(countInterval);
             pauseBtn.innerText = "Resume Session";
             pauseBtn.style.background = "#4caf50";
@@ -975,6 +1019,10 @@ pauseBtn.addEventListener('click', () => {
         } else {
             // Resume the countdown
             isCountdownPaused = false;
+            if (explicitPauseStartTime) {
+                totalSessionPauseOffset += Date.now() - explicitPauseStartTime;
+                explicitPauseStartTime = null;
+            }
             startCountdownInterval();
             pauseBtn.innerText = "Pause Session";
             pauseBtn.style.background = "#ff9800";
@@ -986,6 +1034,7 @@ pauseBtn.addEventListener('click', () => {
     if (!isPaused) {
         // Pause the session
         isPaused = true;
+        explicitPauseStartTime = Date.now();
         if (!isOutOfFrame) {
             accumulatedTime += Date.now() - sessionStartTime;
         }
@@ -996,6 +1045,10 @@ pauseBtn.addEventListener('click', () => {
     } else {
         // Resume the session
         isPaused = false;
+        if (explicitPauseStartTime) {
+            totalSessionPauseOffset += Date.now() - explicitPauseStartTime;
+            explicitPauseStartTime = null;
+        }
         if (!isOutOfFrame) {
             sessionStartTime = Date.now();
         }
@@ -1007,6 +1060,7 @@ pauseBtn.addEventListener('click', () => {
 
 continueSetBtn.addEventListener('click', () => {
     setCompleteOverlay.style.display = "none";
+    isResting = false;
     if (currentSet >= targetSets) {
         // If workout is complete, act like done button
         doneBtn.click();
@@ -1031,6 +1085,10 @@ restartBtn.addEventListener('click', () => {
     baselineY = null;
     isJumping = false;
     accumulatedTime = 0;
+    totalSessionStartTime = null;
+    totalSessionPauseOffset = 0;
+    explicitPauseStartTime = null;
+    isResting = false;
     lostTrackingFrames = 0;
     depthChangeFrames = 0;
     
