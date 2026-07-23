@@ -63,14 +63,14 @@ canvas {
 
 .ui-panel {
     position: absolute;
-    top: 30px;
-    left: 30px;
+    top: 25px;
+    left: 25px;
     z-index: 20;
     background: var(--bg-blur);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    padding: 24px 48px;
-    border-radius: 28px;
+    padding: 20px 24px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
     text-align: center;
@@ -79,8 +79,9 @@ canvas {
     align-items: center;
     transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     box-sizing: border-box;
-    max-width: calc(100vw - 60px);
-    max-height: calc(100vh - 60px);
+    width: 360px;
+    max-width: calc(100vw - 50px);
+    max-height: calc(100vh - 50px);
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -106,29 +107,35 @@ canvas {
     text-shadow: 0 0 25px rgba(255, 87, 34, 0.5);
 }
 
-.start-button {
-    background: var(--primary);
-    color: white;
+/* Unified Button Design System & Consistent Hover Glows */
+.start-button, .done-button, .pause-button, .cancel-button, #add-goal-btn {
+    font-family: 'Inter', sans-serif;
     border: none;
+    border-radius: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease !important;
+}
+
+.start-button {
+    background: linear-gradient(135deg, #ff5722, #f4511e);
+    color: white;
     padding: 14px 28px;
     font-size: 16px;
-    font-weight: 600;
-    border-radius: 14px;
-    cursor: pointer;
     margin-top: 15px;
     box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
-    transition: all 0.2s ease;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.5px;
 }
 
 .start-button:hover {
-    background: #ff7043;
-    box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6);
+    background: linear-gradient(135deg, #ff7043, #ff5722);
+    box-shadow: 0 6px 22px rgba(255, 87, 34, 0.65);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .start-button:active {
-    transform: scale(0.95);
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 2px 10px rgba(255, 87, 34, 0.4);
 }
 
 .start-button.hidden {
@@ -138,58 +145,61 @@ canvas {
 .done-button {
     background: #ffffff;
     color: #000000;
-    border: none;
     padding: 14px 28px;
     font-size: 16px;
-    font-weight: 600;
-    border-radius: 14px;
-    cursor: pointer;
     margin-top: 15px;
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
-    transition: all 0.2s ease;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
 }
 
 .done-button:hover {
-    background: #f0f0f0;
-    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+    background: #f5f5f5;
+    box-shadow: 0 6px 22px rgba(255, 255, 255, 0.55);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .done-button:active {
-    transform: scale(0.95);
-}
-
-.status-text {
-    margin-top: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 13px;
-    font-weight: 400;
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
 }
 
 .pause-button {
-    background: #ff9800;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
     color: #ffffff;
-    border: none;
     padding: 14px 28px;
     font-size: 16px;
-    font-weight: 600;
-    border-radius: 14px;
-    cursor: pointer;
     margin-top: 15px;
-    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
-    transition: all 0.2s ease;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
 }
 
 .pause-button:hover {
-    background: #ffa726;
-    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+    background: linear-gradient(135deg, #ffa726, #ff9800);
+    box-shadow: 0 6px 22px rgba(255, 152, 0, 0.65);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .pause-button:active {
-    transform: scale(0.95);
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 2px 10px rgba(255, 152, 0, 0.4);
+}
+
+.cancel-button {
+    background: linear-gradient(135deg, #e53935, #c62828);
+    color: #ffffff;
+    padding: 14px 28px;
+    font-size: 16px;
+    margin-top: 15px;
+    box-shadow: 0 4px 15px rgba(229, 57, 53, 0.4);
+}
+
+.cancel-button:hover {
+    background: linear-gradient(135deg, #ef5350, #e53935);
+    box-shadow: 0 6px 22px rgba(229, 57, 53, 0.65);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.cancel-button:active {
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 2px 10px rgba(229, 57, 53, 0.4);
 }
 
 /* Goal Inputs UI */
@@ -205,9 +215,12 @@ canvas {
 .goal-toggle-wrapper {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 14px;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
+    font-weight: 600;
 }
 
 .switch {
@@ -342,39 +355,98 @@ input:checked + .slider:before {
         .ui-panel {
             top: 15px;
             left: 15px;
-            padding: 15px 20px;
+            padding: 16px 20px;
             max-width: calc(100vw - 30px);
             max-height: calc(100vh - 30px);
             border-radius: 20px;
         }
-        .counter { font-size: 64px; }
-        .ui-panel h2 { font-size: 24px !important; }
-        .ui-panel .start-button, .ui-panel .pause-button, .ui-panel .done-button { 
-            font-size: 16px !important; 
-            padding: 12px 20px !important; 
+        .counter { 
+            font-size: 56px !important; 
+            margin: 2px 0 !important;
         }
-        .ui-panel input[type="number"] { width: 70px !important; font-size: 18px !important; padding: 8px !important; }
-        #rest-timer { font-size: 36px !important; }
-        #timer { font-size: 36px !important; }
-        .ui-panel .stat-item { font-size: 16px !important; margin-bottom: 8px !important; }
-        .ui-panel .stat-value { font-size: 18px !important; }
-        .ui-panel > div[id$="-overlay"] > div { padding: 10px !important; }
+        #set-progress {
+            font-size: 20px !important;
+            margin-bottom: 8px !important;
+        }
+        .ui-panel h2 { 
+            font-size: 24px !important; 
+        }
+        .start-button, .pause-button, .done-button, .cancel-button, #add-goal-btn { 
+            font-size: 15px !important; 
+            padding: 11px 22px !important; 
+            margin-top: 10px !important;
+        }
+        .goal-inputs input[type="number"], .ui-panel input[type="number"] { 
+            width: 70px !important; 
+            font-size: 18px !important; 
+            padding: 8px !important; 
+        }
+        #rest-timer { font-size: 36px !important; margin-bottom: 12px !important; }
+        #timer { font-size: 32px !important; }
+        .stat-item { font-size: 16px !important; margin-bottom: 8px !important; }
+        .stat-value { font-size: 18px !important; }
+        .overlay-anim > div { padding: 15px 20px !important; }
         #restart-goal-settings, .goal-settings { padding-top: 15px !important; margin-top: 15px !important; }
-        #set-complete-progress-text { font-size: 20px !important; }
+        #set-complete-progress-text { font-size: 20px !important; margin-top: 8px !important; }
     }
 
     @media (max-width: 480px) {
         .ui-panel {
             top: 10px;
             left: 10px;
-            padding: 15px;
+            padding: 12px 14px;
             max-width: calc(100vw - 20px);
             max-height: calc(100vh - 20px);
+            border-radius: 16px;
         }
-        .goal-inputs { gap: 10px !important; flex-direction: column; align-items: center; }
-        .goal-input-group { align-items: center; }
-        .ui-panel * { max-width: 100%; box-sizing: border-box; text-align: center; }
-        label[style*="display: flex"] { justify-content: center; text-align: left; }
+        .counter { 
+            font-size: 46px !important; 
+        }
+        #set-progress {
+            font-size: 17px !important;
+        }
+        .ui-panel h2 {
+            font-size: 21px !important;
+        }
+        .overlay-anim > div {
+            padding: 10px 12px !important;
+        }
+        .goal-inputs { 
+            gap: 12px !important; 
+            margin: 15px 0 !important;
+            flex-direction: row !important;
+            justify-content: center !important;
+        }
+        .goal-input-group label {
+            font-size: 14px !important;
+        }
+        .goal-input-group input {
+            width: 65px !important;
+            font-size: 16px !important;
+            padding: 6px !important;
+        }
+        .start-button, .pause-button, .done-button, .cancel-button, #add-goal-btn {
+            font-size: 14px !important;
+            padding: 10px 18px !important;
+            border-radius: 12px !important;
+        }
+        #stat-jumps {
+            font-size: 26px !important;
+        }
+        .stat-item {
+            font-size: 14px !important;
+            margin-bottom: 6px !important;
+        }
+        .stat-value {
+            font-size: 16px !important;
+        }
+        #restart-goal-settings {
+            margin-top: 15px !important;
+            padding-top: 12px !important;
+        }
+        .goal-toggle-wrapper {
+            font-size: 15px !important;
+        }
     }
     
 .warning-box {
@@ -403,6 +475,61 @@ input:checked + .slider:before {
     margin-top: 20px;
     border-color: #ff5722;
 }
+
+/* Smooth Overlay Modal & Button Transitions */
+.overlay-anim {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+    pointer-events: none;
+}
+
+.overlay-anim.show {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+#active-session-ui {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#active-session-ui.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+#add-goal-btn {
+    background: linear-gradient(135deg, #2196f3, #1976d2) !important;
+    color: #ffffff;
+    border: none;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 0;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+#add-goal-btn:hover {
+    background: linear-gradient(135deg, #42a5f5, #2196f3) !important;
+    box-shadow: 0 6px 22px rgba(33, 150, 243, 0.65) !important;
+    transform: translateY(-2px) scale(1.03);
+}
+
+#add-goal-btn:active {
+    transform: translateY(0) scale(0.96);
+    box-shadow: 0 2px 10px rgba(33, 150, 243, 0.4) !important;
+}
 </style>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -425,7 +552,7 @@ input:checked + .slider:before {
             <div id="timer" class="timer" style="display: none; font-size: 48px; font-weight: 800; color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; margin-bottom: 10px; text-shadow: 0 0 15px rgba(255,255,255,0.2);">00:00</div>
             
             <div id="goal-settings" class="goal-settings" style="display: none; margin-top: 15px;">
-                <div class="goal-toggle-wrapper" style="justify-content: center; font-size: 20px;">
+                <div class="goal-toggle-wrapper">
                     <span>Set Jump Rope Goal</span>
                     <label class="switch">
                         <input type="checkbox" id="goal-toggle">
@@ -442,7 +569,7 @@ input:checked + .slider:before {
                         <input type="number" id="target-sets" value="2" min="1" style="font-size: 20px; padding: 10px;">
                     </div>
                 </div>
-                <div class="goal-toggle-wrapper" style="margin-top: 20px; justify-content: center; font-size: 18px;">
+                <div class="goal-toggle-wrapper" style="margin-top: 15px;">
                     <span>Advanced Flow Settings</span>
                     <label class="switch">
                         <input type="checkbox" id="flow-toggle">
@@ -456,6 +583,10 @@ input:checked + .slider:before {
                     <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: white; font-size: 16px;">
                         <input type="checkbox" id="remove-countdown" style="width: 22px; height: 22px;"> Skip countdown after 1st set
                     </label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                        <label for="countdown-duration" style="font-size: 15px; color: rgba(255,255,255,0.9);">Countdown Timer (sec):</label>
+                        <input type="number" id="countdown-duration" value="10" min="1" max="60" style="font-size: 16px; padding: 6px; width: 65px; text-align: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;">
+                    </div>
                 </div>
             </div>
 
@@ -478,7 +609,7 @@ input:checked + .slider:before {
             </div> <!-- End active-session-ui -->
             
 <!-- Set Complete Overlay -->
-    <div id="set-complete-overlay" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
+    <div id="set-complete-overlay" class="overlay-anim" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
         <div style="text-align: center; color: white; padding: 20px 40px;">
             <h2 id="set-complete-title" style="margin-top: 0; color: #ff5722; letter-spacing: 2px; font-size: 32px;">SET 1 COMPLETE</h2>
             <div id="set-complete-progress-text" style="font-size: 26px; font-weight: bold; margin-top: 15px; color: white;">Set 1 out of 3 completed</div>
@@ -491,7 +622,7 @@ input:checked + .slider:before {
     </div>
 
 <!-- Mid-Session Goal Overlay -->
-    <div id="mid-session-goal-overlay" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
+    <div id="mid-session-goal-overlay" class="overlay-anim" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
         <div style="text-align: center; color: white; padding: 20px 40px;">
             <h2 style="margin-top: 0; color: #2196f3; letter-spacing: 2px; font-size: 32px;">ADD GOAL</h2>
             <div class="goal-inputs show" style="justify-content: center; margin: 30px 0; gap: 20px;">
@@ -506,81 +637,85 @@ input:checked + .slider:before {
             </div>
             <div style="display: flex; gap: 15px; justify-content: center;">
                 <button id="mid-session-apply-btn" class="start-button" style="margin-top: 0; font-size: 20px; padding: 15px 30px;">Apply Goal</button>
-                <button id="mid-session-cancel-btn" class="pause-button" style="background: #e53935; margin-top: 0; box-shadow: 0 4px 15px rgba(229, 57, 53, 0.3); font-size: 20px; padding: 15px 30px;">Cancel</button>
+                <button id="mid-session-cancel-btn" class="cancel-button" style="margin-top: 0; font-size: 20px; padding: 15px 30px;">Cancel</button>
             </div>
         </div>
     </div>
 
 <!-- Stats Overlay -->
-    <div id="stats-overlay" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
-        <div style="text-align: center; color: white; padding: 20px 40px;">
-            <h2 style="margin-top: 0; color: #ff5722; letter-spacing: 2px; font-size: 28px;">JUMP ROPE SESSION COMPLETE</h2>
-            <div style="margin: 25px 0; font-size: 26px;">
-                <div style="margin: 15px 0;">Total Jumps: <strong id="stat-jumps" style="color: #ff5722; font-size: 32px;">0</strong></div>
-                <div id="stat-goal-summary" style="margin: 15px 0; display: none; font-size: 22px; color: rgba(255,255,255,0.7);">
+    <div id="stats-overlay" class="overlay-anim" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="text-align: center; color: white; padding: 15px 25px;">
+            <h2 style="margin-top: 0; margin-bottom: 10px; color: #ff5722; letter-spacing: 2px; font-size: 26px;">JUMP ROPE SESSION COMPLETE</h2>
+            <div style="margin: 10px 0; font-size: 22px;">
+                <div style="margin: 6px 0;">Total Jumps: <strong id="stat-jumps" style="color: #ff5722; font-size: 28px;">0</strong></div>
+                <div id="stat-goal-summary" style="margin: 6px 0; display: none; font-size: 18px; color: rgba(255,255,255,0.7);">
                     Completed <strong id="stat-sets-done" style="color: white;">0</strong> of <strong id="stat-sets-total" style="color: white;">0</strong> Sets
                 </div>
-                <div class="stat-item" style="font-size: 20px; margin-bottom: 12px;">
+                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
                     <span class="stat-label">Highest Streak:</span>
-                    <span id="stat-max-streak" class="stat-value" style="color: #ff9800; font-weight: bold; font-size: 24px;">0</span>
+                    <span id="stat-max-streak" class="stat-value" style="color: #ff9800; font-weight: bold; font-size: 20px;">0</span>
                 </div>
-                <div class="stat-item" style="font-size: 20px; margin-bottom: 12px;">
+                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
                     <span class="stat-label">Longest Streak Time:</span>
-                    <span id="stat-max-streak-time" class="stat-value" style="font-size: 24px;">00:00</span>
+                    <span id="stat-max-streak-time" class="stat-value" style="font-size: 20px;">00:00</span>
                 </div>
-                <div class="stat-item" style="font-size: 20px; margin-bottom: 12px;">
-                <span class="stat-label">Total Time:</span>
-                <span id="stat-total-time" class="stat-value" style="font-size: 24px;">00:00</span>
-            </div>
-            <div class="stat-item" style="font-size: 20px; margin-bottom: 12px;">
-                <span class="stat-label">Active Time:</span>
-                <span id="stat-time" class="stat-value" style="font-size: 24px;">00:00</span>
-            </div>
-            <div class="stat-item" style="font-size: 20px; margin-bottom: 12px;">
-                <span class="stat-label">Speed (Jumps / Min):</span>
-                <span id="stat-speed" class="stat-value" style="font-size: 24px;">0 JPM</span>
-            </div>
-            <div class="stat-item" style="font-size: 20px; margin-bottom: 12px;">
-                <span class="stat-label">Estimated Distance:</span>
-                <span id="stat-dist" class="stat-value" style="color: #ff5722; font-weight: bold; font-size: 24px;">0 mi</span>
-            </div>
+                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
+                    <span class="stat-label">Total Time:</span>
+                    <span id="stat-total-time" class="stat-value" style="font-size: 20px;">00:00</span>
+                </div>
+                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
+                    <span class="stat-label">Active Time:</span>
+                    <span id="stat-time" class="stat-value" style="font-size: 20px;">00:00</span>
+                </div>
+                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
+                    <span class="stat-label">Speed (Jumps / Min):</span>
+                    <span id="stat-speed" class="stat-value" style="font-size: 20px;">0 JPM</span>
+                </div>
+                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
+                    <span class="stat-label">Estimated Distance:</span>
+                    <span id="stat-dist" class="stat-value" style="color: #ff5722; font-weight: bold; font-size: 20px;">0 mi</span>
+                </div>
             
-            <div id="restart-goal-settings" class="goal-settings" style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px;">
-                <div class="goal-toggle-wrapper" style="justify-content: center; font-size: 20px;">
-                    <span>Set Goal for Next Jump Rope Session</span>
+            <div id="restart-goal-settings" class="goal-settings" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <div class="goal-toggle-wrapper">
+                    <span>Set Goal for Next Session</span>
                     <label class="switch">
                         <input type="checkbox" id="restart-goal-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="restart-goal-inputs" class="goal-inputs" style="justify-content: center; gap: 20px; margin-top: 15px;">
+                <div id="restart-goal-inputs" class="goal-inputs" style="justify-content: center; gap: 15px; margin-top: 10px;">
                     <div class="goal-input-group">
-                        <label for="restart-target-reps" style="font-size: 16px;">Reps per set</label>
-                        <input type="number" id="restart-target-reps" value="25" min="1" style="font-size: 20px; padding: 10px;">
+                        <label for="restart-target-reps" style="font-size: 15px;">Reps per set</label>
+                        <input type="number" id="restart-target-reps" value="25" min="1" style="font-size: 18px; padding: 8px;">
                     </div>
                     <div class="goal-input-group">
-                        <label for="restart-target-sets" style="font-size: 16px;">Sets</label>
-                        <input type="number" id="restart-target-sets" value="2" min="1" style="font-size: 20px; padding: 10px;">
+                        <label for="restart-target-sets" style="font-size: 15px;">Sets</label>
+                        <input type="number" id="restart-target-sets" value="2" min="1" style="font-size: 18px; padding: 8px;">
                     </div>
                 </div>
-                <div class="goal-toggle-wrapper" style="margin-top: 20px; justify-content: center; font-size: 18px;">
+                <div class="goal-toggle-wrapper" style="margin-top: 12px;">
                     <span>Advanced Flow Settings</span>
                     <label class="switch">
                         <input type="checkbox" id="restart-flow-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="restart-flow-inputs" class="goal-inputs" style="flex-direction: column; gap: 12px; align-items: center; padding-left: 0; margin-top: 10px;">
-                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: white; font-size: 16px;">
-                        <input type="checkbox" id="restart-remove-pauses" style="width: 22px; height: 22px;"> Skip breaks between sets
+                <div id="restart-flow-inputs" class="goal-inputs" style="flex-direction: column; gap: 8px; align-items: center; padding-left: 0; margin-top: 8px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: white; font-size: 15px;">
+                        <input type="checkbox" id="restart-remove-pauses" style="width: 20px; height: 20px;"> Skip breaks between sets
                     </label>
-                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: white; font-size: 16px;">
-                        <input type="checkbox" id="restart-remove-countdown" style="width: 22px; height: 22px;"> Skip countdown after 1st set
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: white; font-size: 15px;">
+                        <input type="checkbox" id="restart-remove-countdown" style="width: 20px; height: 20px;"> Skip countdown after 1st set
                     </label>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                        <label for="restart-countdown-duration" style="font-size: 14px; color: rgba(255,255,255,0.9);">Countdown Timer (sec):</label>
+                        <input type="number" id="restart-countdown-duration" value="10" min="1" max="60" style="font-size: 15px; padding: 5px; width: 60px; text-align: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;">
+                    </div>
                 </div>
             </div>
 
-            <button id="restart-btn" class="start-button" style="margin-top: 30px; font-size: 22px; padding: 15px 30px;">start new jump rope session</button>
+            <button id="restart-btn" class="start-button" style="margin-top: 15px; font-size: 18px; padding: 12px 24px;">start new jump rope session</button>
         </div>
     </div>
 
@@ -652,6 +787,10 @@ let jumpFrames = 0;
 let baselineY = null;
 let baselineTorsoHeight = null;
 let jumpStartTorso = 0;
+let framesSinceLastJump = 0;
+let lastJumpTime = 0;
+let lastWalkTime = 0;
+let lastXPositions = [];
 let sessionStartTime = null;
 let timerInterval = null;
 let isPaused = false;
@@ -659,6 +798,7 @@ let accumulatedTime = 0;
 let isCountdownActive = false;
 let isCountdownPaused = false;
 let currentCountdownValue = 0;
+let countdownDuration = 10;
 let countInterval = null;
 let lostTrackingFrames = 0;
 let depthChangeFrames = 0;
@@ -673,6 +813,20 @@ let totalSessionPauseOffset = 0;
 let explicitPauseStartTime = null;
 let isResting = false;
 let restStartTime = null;
+
+// Ice Block & Particle System State
+let iceState = 0; // 0 = normal green box, 1 = frozen ice block, 2 = cracked ice block
+let iceBreakCount = 0;
+let iceParticles = [];
+let currentBoxX = 0;
+let currentBoxY = 0;
+let currentBoxW = 0;
+let currentBoxH = 0;
+let frozenBoxX = null;
+let frozenBoxY = null;
+let frozenBoxW = null;
+let frozenBoxH = null;
+let isLandingUncrouch = false;
 
 // Goal Mode State
 let goalMode = false;
@@ -771,6 +925,8 @@ function startCountdownInterval() {
             if (!totalSessionStartTime) {
                 totalSessionStartTime = Date.now();
             }
+            video.classList.remove("blur-background");
+            canvas.classList.remove("blur-background");
         }
     }, 1000);
 }
@@ -779,7 +935,15 @@ function startSessionWithCountdown() {
     isPaused = true;
     isCountdownActive = true;
     isCountdownPaused = false;
-    currentCountdownValue = 10;
+    currentCountdownValue = countdownDuration;
+    
+    // Reset baseline state on countdown start so initial posture calibrates cleanly
+    baselineY = null;
+    baselineTorsoHeight = null;
+    isJumping = false;
+    lostTrackingFrames = 0;
+    depthChangeFrames = 0;
+    framesSinceLastJump = 0;
     
     const overlay = document.getElementById('countdown-overlay');
     const container = document.getElementById('countdown-container');
@@ -818,6 +982,12 @@ startBtn.addEventListener('click', async () => {
         explicitPauseStartTime = null;
         isResting = false;
         
+        // Read countdown duration input
+        const cdInput = parseInt(document.getElementById('countdown-duration').value, 10);
+        if (!isNaN(cdInput) && cdInput > 0) {
+            countdownDuration = cdInput;
+        }
+
         // Goal Mode Initialization
         goalMode = goalToggle.checked;
         if (goalMode) {
@@ -836,6 +1006,8 @@ startBtn.addEventListener('click', async () => {
         jumpCount = 0;
         lostTrackingFrames = 0;
         depthChangeFrames = 0;
+        framesSinceLastJump = 0;
+        lastXPositions = [];
         currentStreak = 0;
         maxStreak = 0;
         maxStreakDuration = 0;
@@ -918,6 +1090,54 @@ function predictWebcam() {
     setTimeout(predictWebcam, 33);
 }
 
+function spawnIceParticles(x, y, bw, bh) {
+    iceParticles = [];
+    const count = 40;
+    for (let i = 0; i < count; i++) {
+        iceParticles.push({
+            x: x + Math.random() * bw,
+            y: y + Math.random() * bh,
+            vx: (Math.random() - 0.5) * 18,
+            vy: (Math.random() - 0.8) * 16 - 2,
+            size: Math.random() * 12 + 5,
+            rotation: Math.random() * Math.PI * 2,
+            vRot: (Math.random() - 0.5) * 0.4,
+            opacity: 1.0,
+            color: Math.random() > 0.35 ? 'rgba(0, 229, 255,' : 'rgba(255, 255, 255,'
+        });
+    }
+}
+
+function updateAndDrawIceParticles(ctx) {
+    for (let i = iceParticles.length - 1; i >= 0; i--) {
+        const p = iceParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.55; // gravity
+        p.rotation += p.vRot;
+        p.opacity -= 0.025;
+
+        if (p.opacity <= 0) {
+            iceParticles.splice(i, 1);
+            continue;
+        }
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color + Math.max(0, p.opacity) + ')';
+        ctx.shadowColor = '#00e5ff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size);
+        ctx.lineTo(p.size * 0.6, p.size * 0.4);
+        ctx.lineTo(-p.size * 0.6, p.size * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
 function drawWireframe(landmarks, w, h) {
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#ff5722"; // Neon Orange
@@ -927,7 +1147,7 @@ function drawWireframe(landmarks, w, h) {
     const onScreenLms = landmarks.filter(lm => lm.y >= 0 && lm.y <= 1 && lm.x >= 0 && lm.x <= 1);
     const boxLms = onScreenLms.length > 0 ? onScreenLms : landmarks;
 
-    // 1. Draw Bounding Box (Green) around on-screen body parts
+    // 1. Draw Bounding Box around on-screen body parts
     const xCoords = boxLms.map(lm => lm.x * w);
     const yCoords = boxLms.map(lm => lm.y * h);
     const padding = 20;
@@ -960,10 +1180,106 @@ function drawWireframe(landmarks, w, h) {
     const xMax = Math.min(w, rawXMax);
     const yMin = Math.max(0, rawYMin);
     const yMax = Math.min(h, rawYMax);
+    const bw = xMax - xMin;
+    const bh = yMax - yMin;
     
-    ctx.strokeStyle = "#00ff00";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+    currentBoxX = xMin;
+    currentBoxY = yMin;
+    currentBoxW = bw;
+    currentBoxH = bh;
+    
+    if (iceState === 0) {
+        // Standard Neon Green Bounding Box
+        ctx.strokeStyle = "#00ff00";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(xMin, yMin, bw, bh);
+        frozenBoxX = null;
+        frozenBoxY = null;
+        frozenBoxW = null;
+        frozenBoxH = null;
+    } else if (iceState === 1) {
+        // Frozen Ice Block - Fixed physical dimensions (no resizing while frozen!)
+        if (frozenBoxX === null) {
+            frozenBoxX = xMin;
+            frozenBoxY = yMin;
+            frozenBoxW = bw;
+            frozenBoxH = bh;
+        }
+        const fX = frozenBoxX;
+        const fY = frozenBoxY;
+        const fW = frozenBoxW;
+        const fH = frozenBoxH;
+        const fMaxX = fX + fW;
+        const fMaxY = fY + fH;
+
+        ctx.save();
+        
+        // Frosted fill clears up gradually as cracks increase (1 -> 4)
+        const fillAlpha = Math.max(0.08, 0.35 - (iceBreakCount * 0.06));
+        const iceGrad = ctx.createLinearGradient(fX, fY, fX + fW, fY + fH);
+        iceGrad.addColorStop(0, `rgba(0, 229, 255, ${fillAlpha})`);
+        iceGrad.addColorStop(0.5, `rgba(255, 255, 255, ${fillAlpha * 0.6})`);
+        iceGrad.addColorStop(1, `rgba(0, 184, 212, ${fillAlpha * 1.1})`);
+        ctx.fillStyle = iceGrad;
+        ctx.fillRect(fX, fY, fW, fH);
+        
+        // Ice Border with Glowing Cyan Outline (turns warning gold on stage 4)
+        ctx.strokeStyle = iceBreakCount >= 4 ? "#ffeb3b" : "#00e5ff";
+        ctx.lineWidth = iceBreakCount >= 4 ? 5 : 4;
+        ctx.shadowColor = iceBreakCount >= 4 ? "#ff9800" : "#00e5ff";
+        ctx.shadowBlur = 15;
+        ctx.strokeRect(fX, fY, fW, fH);
+
+        // Render Progressive Jagged Ice Cracks (1 to 4)
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "#00e5ff";
+        ctx.shadowBlur = 12;
+
+        if (iceBreakCount >= 1) {
+            // Crack 1: Upper Left Branch
+            ctx.beginPath();
+            ctx.moveTo(fX + fW * 0.2, fY);
+            ctx.lineTo(fX + fW * 0.35, fY + fH * 0.3);
+            ctx.lineTo(fX + fW * 0.25, fY + fH * 0.48);
+            ctx.stroke();
+        }
+        if (iceBreakCount >= 2) {
+            // Crack 2: Upper Right Branch
+            ctx.beginPath();
+            ctx.moveTo(fMaxX, fY + fH * 0.35);
+            ctx.lineTo(fX + fW * 0.7, fY + fH * 0.42);
+            ctx.lineTo(fX + fW * 0.55, fY + fH * 0.62);
+            ctx.stroke();
+        }
+        if (iceBreakCount >= 3) {
+            // Crack 3: Lower Left Branch
+            ctx.beginPath();
+            ctx.moveTo(fX, fY + fH * 0.68);
+            ctx.lineTo(fX + fW * 0.3, fY + fH * 0.72);
+            ctx.lineTo(fX + fW * 0.55, fY + fH * 0.62);
+            ctx.lineTo(fX + fW * 0.4, fMaxY);
+            ctx.stroke();
+        }
+        if (iceBreakCount >= 4) {
+            // Crack 4: Cross Spiderweb Fractures
+            ctx.beginPath();
+            ctx.moveTo(fX + fW * 0.35, fY + fH * 0.3);
+            ctx.lineTo(fX + fW * 0.7, fY + fH * 0.25);
+            ctx.lineTo(fX + fW * 0.88, fY + fH * 0.58);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(fX + fW * 0.55, fY + fH * 0.62);
+            ctx.lineTo(fMaxX, fY + fH * 0.82);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    // Render active ice shatter particles
+    updateAndDrawIceParticles(ctx);
     
     ctx.strokeStyle = "#ff5722";
 
@@ -1035,82 +1351,189 @@ function processJumpLogic(landmarks) {
         referenceHeight = Math.max(0.005, shoulderWidth * 1.5);
     }
 
-    // If paused (e.g. during countdown or out of frame), continuously calibrate baseline so it's accurate when session starts
+    // If paused (e.g. during countdown or out of frame), continuously calibrate baseline so it's accurate when session starts.
+    // Smoothly adapt to current posture so standing up straight or getting into position locks a clean baseline.
     if (isPaused || isCountdownActive || isOutOfFrame) {
-        baselineY = trackerY;
-        baselineTorsoHeight = referenceHeight;
+        if (baselineY === null || baselineTorsoHeight === null) {
+            baselineY = trackerY;
+            baselineTorsoHeight = referenceHeight;
+        } else {
+            // Rapid smooth adaptation during countdown/pause to settle on standing position
+            baselineY = baselineY * 0.90 + trackerY * 0.10;
+            baselineTorsoHeight = baselineTorsoHeight * 0.90 + referenceHeight * 0.10;
+        }
         isJumping = false;
         depthChangeFrames = 0;
+        framesSinceLastJump = 0;
         return;
     }
     if (baselineY === null || baselineTorsoHeight === null) {
         baselineY = trackerY;
         baselineTorsoHeight = referenceHeight;
         depthChangeFrames = 0;
+        framesSinceLastJump = 0;
     }
 
-    // Auto-calibration: reset baseline if depth changes significantly (moving forward/backward)
+    const trackerX = (leftShoulderLM.x + rightShoulderLM.x) / 2;
+
+    // Track horizontal X motion over a rolling window of 6 frames (~180ms)
+    lastXPositions.push(trackerX);
+    if (lastXPositions.length > 6) lastXPositions.shift();
+
+    const xShift = Math.max(...lastXPositions) - Math.min(...lastXPositions);
+
+    // If user is actively walking laterally / stepping back, scale sway limit relative to body size in frame
+    const maxSway = Math.max(referenceHeight * 0.35, 0.03);
+    if (xShift > maxSway) {
+        lastWalkTime = Date.now();
+        baselineY = trackerY;
+        baselineTorsoHeight = referenceHeight;
+        isJumping = false;
+        depthChangeFrames = 0;
+        framesSinceLastJump = 0;
+        return;
+    }
+
+    // Auto-calibration: instantly recalibrate baseline and size scale if distance changes (moving forward/backward).
+    // Running this before jump logic breaks any deadlock when walking closer to the camera.
     const torsoDiff = Math.abs(referenceHeight - baselineTorsoHeight);
-    if (torsoDiff / baselineTorsoHeight > 0.15 && torsoDiff > 0.001) {
+    if (torsoDiff / baselineTorsoHeight > 0.18 && torsoDiff > 0.005) {
         depthChangeFrames++;
-        if (depthChangeFrames > 5) { // Require ~150ms of sustained depth change to reset to prevent glitches
+        if (depthChangeFrames > 5) { // Require ~150ms of sustained distance change to recalibrate
             baselineY = trackerY;
             baselineTorsoHeight = referenceHeight;
             isJumping = false;
             depthChangeFrames = 0;
+            framesSinceLastJump = 0;
+            return;
         }
-        return;
+    } else {
+        depthChangeFrames = 0;
     }
-    depthChangeFrames = 0;
 
-    const jumpThreshold = Math.max(referenceHeight * 0.15, 0.001);
+    const jumpThreshold = Math.max(referenceHeight * 0.10, 0.012);
+    const now = Date.now();
 
-    if (trackerY < (baselineY - jumpThreshold)) {
-        if (!isJumping) {
-            isJumping = true;
-            jumpFrames = 0;
-            jumpStartTorso = referenceHeight;
+    // Distance-aware refractory period: 220ms when standing 10+ feet away (referenceHeight <= 0.28), 160ms when close
+    const minRefractory = referenceHeight <= 0.28 ? 220 : 160;
+    
+    // Takeoff threshold guard: within 10 frames post-landing (knee uncrouch window), require 1.35x threshold
+    const effectiveTakeoffThreshold = (framesSinceLastJump <= 10) ? (jumpThreshold * 1.35) : jumpThreshold;
+
+    if (trackerY < (baselineY - effectiveTakeoffThreshold)) {
+        if (!isJumping && !isLandingUncrouch) {
+            // Require distance-aware refractory period since last landed jump and 300ms cooldown since last lateral walking step
+            if ((now - lastJumpTime > minRefractory) && (now - lastWalkTime > 300)) {
+                isJumping = true;
+                jumpFrames = 0;
+                jumpStartTorso = referenceHeight;
+            }
         } else {
             jumpFrames++;
-            // Cancel fake jumps (too long in air)
-            if (jumpFrames > 20) {
+            // Cancel fake jumps (too long in air: > 40 frames / ~1.3 seconds)
+            if (jumpFrames > 40) {
                 isJumping = false;
-                baselineY = trackerY;
-                baselineTorsoHeight = referenceHeight;
+                lastJumpTime = Date.now();
+                framesSinceLastJump = 0;
             }
             // Cancel fake jumps (leaning over or walking changes torso size)
             const jumpTorsoDiff = Math.abs(referenceHeight - jumpStartTorso);
-            if (jumpTorsoDiff / jumpStartTorso > 0.15 && jumpTorsoDiff > 0.001) {
+            if (jumpTorsoDiff / jumpStartTorso > 0.25 && jumpTorsoDiff > 0.005) {
                 isJumping = false;
-                baselineY = trackerY;
-                baselineTorsoHeight = referenceHeight;
+                lastJumpTime = Date.now();
+                framesSinceLastJump = 0;
             }
         }
     } else {
         if (isJumping) {
-            // Drop halfway back down to register a landing (allows staying light on toes)
-            const landingThreshold = Math.max(jumpThreshold * 0.5, 0.0005);
+            // Require returning near ground level (within 30% of jump height) to complete landing
+            const landingThreshold = Math.max(jumpThreshold * 0.30, 0.0003);
             if (trackerY > (baselineY - landingThreshold)) {
-                if (jumpFrames >= 2) {
+                if (jumpFrames >= 1) { // 1 frame at peak is sufficient for fast jumps
                     jumpCount++;
                     updateUI();
+                    lastJumpTime = Date.now();
+                    
+                    // Handle Ice Block breaking over 5 jumps!
+                    if (iceState > 0) {
+                        iceBreakCount++;
+                        if (iceBreakCount >= 5) {
+                            iceState = 0; // Shattered!
+                            iceBreakCount = 0;
+                            spawnIceParticles(frozenBoxX || currentBoxX, frozenBoxY || currentBoxY, frozenBoxW || currentBoxW, frozenBoxH || currentBoxH);
+                            frozenBoxX = null;
+                            frozenBoxY = null;
+                            frozenBoxW = null;
+                            frozenBoxH = null;
+                        }
+                    }
                 }
                 isJumping = false;
+                isLandingUncrouch = true;
+                framesSinceLastJump = 0;
             }
         } else {
-            // Update baseline asymmetrically to prevent false jumps when straightening back after a set
-            if (trackerY < baselineY) {
-                // Moving UP (standing taller or staying light on toes). 
-                // Use original 0.02 rate so it doesn't chase fast jumps too quickly.
-                baselineY = baselineY * 0.98 + trackerY * 0.02;
-            } else {
-                // Moving DOWN (squatting/landing). Adapt very slowly to keep standing baseline stable.
-                // This prevents slouching from dragging the baseline down, which causes false jumps when standing up.
-                baselineY = baselineY * 0.998 + trackerY * 0.002;
+            framesSinceLastJump++;
+            
+            // Clear landing uncrouch lock once body settles back down near ground level
+            if (trackerY >= (baselineY - (jumpThreshold * 0.15))) {
+                isLandingUncrouch = false;
             }
-            baselineTorsoHeight = baselineTorsoHeight * 0.98 + referenceHeight * 0.02;
+            
+            // Check for 5-second idle freezing: if grounded and not jumping for > 5 seconds, freeze box!
+            const lastActiveTime = lastJumpTime > 0 ? lastJumpTime : (sessionStartTime || Date.now());
+            if (Date.now() - lastActiveTime > 5000) {
+                if (iceState === 0) {
+                    iceState = 1; // Frozen Ice Block!
+                    iceBreakCount = 0;
+                }
+            }
+
+            if (framesSinceLastJump > 30) { // ~1.0 second idle at 30fps
+                // Rapidly recalibrate baseline to current standing position when idle
+                baselineY = baselineY * 0.8 + trackerY * 0.2;
+                baselineTorsoHeight = baselineTorsoHeight * 0.8 + referenceHeight * 0.2;
+            } else if (framesSinceLastJump > 10) { // Only adapt baseline AFTER landing impact crouch has finished (~300ms)
+                // Symmetric gentle baseline adaptation when grounded
+                baselineY = baselineY * 0.97 + trackerY * 0.03;
+                baselineTorsoHeight = baselineTorsoHeight * 0.97 + referenceHeight * 0.03;
+            }
         }
     }
+}
+
+function openOverlay(overlayEl) {
+    const activeUI = document.getElementById('active-session-ui');
+    activeUI.classList.add('fade-out');
+    video.classList.add("blur-background");
+    canvas.classList.add("blur-background");
+    
+    setTimeout(() => {
+        activeUI.style.display = "none";
+        overlayEl.style.display = "flex";
+        requestAnimationFrame(() => {
+            overlayEl.classList.add('show');
+        });
+    }, 200);
+}
+
+function closeOverlay(overlayEl, returnToActive = true) {
+    overlayEl.classList.remove('show');
+    if (returnToActive) {
+        video.classList.remove("blur-background");
+        canvas.classList.remove("blur-background");
+    }
+    
+    setTimeout(() => {
+        overlayEl.style.display = "none";
+        if (returnToActive) {
+            const activeUI = document.getElementById('active-session-ui');
+            activeUI.style.display = "flex";
+            requestAnimationFrame(() => {
+                activeUI.classList.remove('fade-out');
+            });
+        }
+    }, 250);
 }
 
 function updateUI() {
@@ -1136,10 +1559,7 @@ function updateUI() {
                 setCompleteTitle.innerText = "WORKOUT COMPLETE";
                 setCompleteTitle.style.color = "#4caf50";
                 continueSetBtn.innerText = "View Final Stats";
-                document.getElementById('active-session-ui').style.display = "none";
-                setCompleteOverlay.style.display = "flex";
-                video.classList.add("blur-background");
-                canvas.classList.add("blur-background");
+                openOverlay(setCompleteOverlay);
             } else if (skipBreaks) {
                 // Skip break, go straight to next set
                 currentSet++;
@@ -1158,10 +1578,7 @@ function updateUI() {
                 setCompleteTitle.innerText = `SET ${currentSet} COMPLETE`;
                 setCompleteTitle.style.color = "#ff5722";
                 continueSetBtn.innerText = "Continue to Next Set";
-                document.getElementById('active-session-ui').style.display = "none";
-                setCompleteOverlay.style.display = "flex";
-                video.classList.add("blur-background");
-                canvas.classList.add("blur-background");
+                openOverlay(setCompleteOverlay);
             }
         }
     } else {
@@ -1263,23 +1680,22 @@ doneBtn.addEventListener('click', () => {
         statSetsTotal.innerText = targetSets;
         statGoalSummary.style.display = "block";
         
-        // Sync restart overlay toggle
+        // Sync restart overlay toggle & countdown duration
         restartGoalToggle.checked = true;
         restartGoalInputs.classList.add('show');
         restartTargetRepsInput.value = targetReps;
         restartTargetSetsInput.value = targetSets;
+        document.getElementById('restart-countdown-duration').value = countdownDuration;
     } else {
         statGoalSummary.style.display = "none";
         
-        // Sync restart overlay toggle
+        // Sync restart overlay toggle & countdown duration
         restartGoalToggle.checked = false;
         restartGoalInputs.classList.remove('show');
+        document.getElementById('restart-countdown-duration').value = countdownDuration;
     }
     
-    document.getElementById('active-session-ui').style.display = "none";
-    statsOverlay.style.display = "flex";
-    video.classList.add("blur-background");
-    canvas.classList.add("blur-background");
+    openOverlay(statsOverlay);
 });
 
 pauseBtn.addEventListener('click', () => {
@@ -1326,39 +1742,38 @@ pauseBtn.addEventListener('click', () => {
 });
 
 continueSetBtn.addEventListener('click', () => {
-    setCompleteOverlay.style.display = "none";
-    video.classList.remove("blur-background");
-    canvas.classList.remove("blur-background");
-    document.getElementById('active-session-ui').style.display = "flex";
-    isResting = false;
-    if (currentSet >= targetSets) {
-        // If workout is complete, act like done button
-        doneBtn.click();
-    } else {
-        // Continue to next set
-        currentSet++;
-        currentReps = 0;
-        setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
-        jumpCountEl.innerText = `${currentReps} / ${targetReps}`;
-        
-        pauseBtn.innerText = "Pause Session";
-        pauseBtn.style.background = "#ff9800";
-        statusText.style.display = "none";
-        
-        if (skipCountdown) {
-            isPaused = false;
-            sessionStartTime = Date.now();
+    closeOverlay(setCompleteOverlay, true);
+    setTimeout(() => {
+        if (currentSet >= targetSets) {
+            doneBtn.click();
         } else {
-            startSessionWithCountdown();
+            currentSet++;
+            currentReps = 0;
+            setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
+            jumpCountEl.innerText = `${currentReps} / ${targetReps}`;
+            
+            pauseBtn.innerText = "Pause Session";
+            pauseBtn.style.background = "#ff9800";
+            statusText.style.display = "none";
+            
+            const activeUI = document.getElementById('active-session-ui');
+            activeUI.style.display = "flex";
+            requestAnimationFrame(() => {
+                activeUI.classList.remove('fade-out');
+            });
+
+            if (skipCountdown) {
+                isPaused = false;
+                sessionStartTime = Date.now();
+            } else {
+                startSessionWithCountdown();
+            }
         }
-    }
+    }, 250);
 });
 
 restartBtn.addEventListener('click', () => {
-    statsOverlay.style.display = "none";
-    video.classList.remove("blur-background");
-    canvas.classList.remove("blur-background");
-    document.getElementById('active-session-ui').style.display = "flex";
+    closeOverlay(statsOverlay, true);
     jumpCount = 0;
     baselineY = null;
     isJumping = false;
@@ -1369,6 +1784,8 @@ restartBtn.addEventListener('click', () => {
     isResting = false;
     lostTrackingFrames = 0;
     depthChangeFrames = 0;
+    framesSinceLastJump = 0;
+    lastXPositions = [];
     currentStreak = 0;
     maxStreak = 0;
     maxStreakDuration = 0;
@@ -1376,6 +1793,13 @@ restartBtn.addEventListener('click', () => {
     if (streakTimeout) clearTimeout(streakTimeout);
     document.getElementById('streak-counter').style.display = "none";
     
+    // Read countdown duration from restart input
+    const rCdInput = parseInt(document.getElementById('restart-countdown-duration').value, 10);
+    if (!isNaN(rCdInput) && rCdInput > 0) {
+        countdownDuration = rCdInput;
+        document.getElementById('countdown-duration').value = countdownDuration;
+    }
+
     // Read new goal settings from the restart overlay
     goalMode = restartGoalToggle.checked;
     if (goalMode) {
@@ -1443,14 +1867,12 @@ const midSessionCancelBtn = document.getElementById('mid-session-cancel-btn');
 
 addGoalBtn.addEventListener('click', () => {
     if (!goalMode) {
-        document.getElementById('active-session-ui').style.display = "none";
-        midSessionGoalOverlay.style.display = "flex";
+        openOverlay(midSessionGoalOverlay);
     }
 });
 
 midSessionCancelBtn.addEventListener('click', () => {
-    midSessionGoalOverlay.style.display = "none";
-    document.getElementById('active-session-ui').style.display = "flex";
+    closeOverlay(midSessionGoalOverlay, true);
 });
 
 midSessionApplyBtn.addEventListener('click', () => {
@@ -1460,8 +1882,7 @@ midSessionApplyBtn.addEventListener('click', () => {
     
     if (targetReps <= 0 || targetSets <= 0) {
         goalMode = false;
-        midSessionGoalOverlay.style.display = "none";
-        document.getElementById('active-session-ui').style.display = "flex";
+        closeOverlay(midSessionGoalOverlay, true);
         return;
     }
     
@@ -1496,21 +1917,19 @@ midSessionApplyBtn.addEventListener('click', () => {
         setCompleteTitle.innerText = "WORKOUT COMPLETE";
         setCompleteTitle.style.color = "#4caf50";
         continueSetBtn.innerText = "View Final Stats";
-        document.getElementById('active-session-ui').style.display = "none";
-                setCompleteOverlay.style.display = "flex";
-                video.classList.add("blur-background");
-                canvas.classList.add("blur-background");
+        
+        closeOverlay(midSessionGoalOverlay, false);
+        setTimeout(() => {
+            openOverlay(setCompleteOverlay);
+        }, 300);
     } else {
         const displayTotal = skipBreaks ? totalTarget : targetReps;
         jumpCountEl.innerText = `${currentReps} / ${displayTotal}`;
         setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
+        closeOverlay(midSessionGoalOverlay, true);
     }
     
     addGoalBtn.style.display = "none";
-    midSessionGoalOverlay.style.display = "none";
-    if (jumpCount < totalTarget) {
-        document.getElementById('active-session-ui').style.display = "flex";
-    }
 });
     </script>
 </body>
