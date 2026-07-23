@@ -30,31 +30,24 @@ body, html {
     align-items: center;
 }
 
-video {
+video, canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: 1;
-    /* Mirror the camera */
     transform: scaleX(-1); 
     transition: filter 0.4s ease;
 }
 
+video {
+    z-index: 1;
+}
+
 canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
     z-index: 2;
-    /* Canvas must also be mirrored to match the video */
-    transform: scaleX(-1);
     pointer-events: none;
-    transition: filter 0.4s ease;
 }
 
 .blur-background {
@@ -63,27 +56,53 @@ canvas {
 
 .ui-panel {
     position: absolute;
-    top: 25px;
-    left: 25px;
+    top: 15px;
+    left: 15px;
     z-index: 20;
     background: var(--bg-blur);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    padding: 20px 24px;
-    border-radius: 24px;
+    padding: 10px 18px;
+    border-radius: 18px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease;
     box-sizing: border-box;
-    width: 360px;
-    max-width: calc(100vw - 50px);
-    max-height: calc(100vh - 50px);
+    width: 360px !important;
+    max-width: calc(100vw - 30px);
+    max-height: calc(100vh - 30px);
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+.ui-panel.expanded-history {
+    width: 360px !important;
+}
+
+.fade-out {
+    opacity: 0 !important;
+    transform: translateY(-8px) scale(0.96) !important;
+    transition: opacity 0.25s ease, transform 0.25s ease !important;
+    pointer-events: none !important;
+}
+
+.fade-in {
+    animation: smoothFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+@keyframes smoothFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .ui-panel.bump {
@@ -93,25 +112,25 @@ canvas {
 .title {
     margin: 0;
     color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    letter-spacing: 5px;
+    font-size: 12px;
+    letter-spacing: 3px;
     text-transform: uppercase;
 }
 
 .counter {
     color: var(--primary);
-    font-size: 84px;
+    font-size: 100px;
     font-weight: 800;
-    margin: 5px 0;
-    line-height: 1;
+    margin: 0;
+    line-height: 0.9;
     text-shadow: 0 0 25px rgba(255, 87, 34, 0.5);
 }
 
 /* Unified Button Design System & Consistent Hover Glows */
-.start-button, .done-button, .pause-button, .cancel-button, #add-goal-btn {
+.start-button, .done-button, .pause-button, .cancel-button, .history-button, #add-goal-btn, .btn-action-base {
     font-family: 'Inter', sans-serif;
     border: none;
-    border-radius: 14px;
+    border-radius: 12px;
     font-weight: 600;
     letter-spacing: 0.5px;
     cursor: pointer;
@@ -121,73 +140,94 @@ canvas {
 .start-button {
     background: linear-gradient(135deg, #ff5722, #f4511e);
     color: white;
-    padding: 14px 28px;
-    font-size: 16px;
-    margin-top: 15px;
+    padding: 8px 20px;
+    font-size: 14px;
+    margin-top: 6px;
     box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
 }
 
 .start-button:hover {
     background: linear-gradient(135deg, #ff7043, #ff5722);
     box-shadow: 0 6px 22px rgba(255, 87, 34, 0.65);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px) scale(1.025);
 }
 
 .start-button:active {
-    transform: translateY(0) scale(0.96);
+    transform: translateY(0) scale(0.965);
     box-shadow: 0 2px 10px rgba(255, 87, 34, 0.4);
-}
-
-.start-button.hidden {
-    display: none;
 }
 
 .done-button {
     background: #ffffff;
     color: #000000;
-    padding: 14px 28px;
-    font-size: 16px;
-    margin-top: 15px;
+    padding: 8px 20px;
+    font-size: 14px;
+    margin-top: 6px;
     box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
 }
 
 .done-button:hover {
     background: #f5f5f5;
     box-shadow: 0 6px 22px rgba(255, 255, 255, 0.55);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px) scale(1.025);
 }
 
 .done-button:active {
-    transform: translateY(0) scale(0.96);
+    transform: translateY(0) scale(0.965);
     box-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
 }
 
 .pause-button {
     background: linear-gradient(135deg, #ff9800, #f57c00);
     color: #ffffff;
-    padding: 14px 28px;
-    font-size: 16px;
-    margin-top: 15px;
+    padding: 8px 20px;
+    font-size: 14px;
+    margin-top: 6px;
     box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
 }
 
 .pause-button:hover {
     background: linear-gradient(135deg, #ffa726, #ff9800);
     box-shadow: 0 6px 22px rgba(255, 152, 0, 0.65);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px) scale(1.025);
 }
 
 .pause-button:active {
-    transform: translateY(0) scale(0.96);
+    transform: translateY(0) scale(0.965);
     box-shadow: 0 2px 10px rgba(255, 152, 0, 0.4);
+}
+
+.history-button {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    padding: 8px 18px;
+    font-size: 14px;
+    margin-top: 8px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    width: 100%;
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.history-button:hover {
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4), 0 4px 15px rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px) scale(1.025);
+}
+
+.history-button:active {
+    transform: translateY(0) scale(0.965);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .cancel-button {
     background: linear-gradient(135deg, #e53935, #c62828);
     color: #ffffff;
-    padding: 14px 28px;
-    font-size: 16px;
-    margin-top: 15px;
+    padding: 8px 20px;
+    font-size: 14px;
+    margin-top: 6px;
     box-shadow: 0 4px 15px rgba(229, 57, 53, 0.4);
 }
 
@@ -200,6 +240,109 @@ canvas {
 .cancel-button:active {
     transform: translateY(0) scale(0.96);
     box-shadow: 0 2px 10px rgba(229, 57, 53, 0.4);
+}
+
+/* Close Icon Button Hover */
+.close-icon-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.close-icon-btn:hover {
+    background: rgba(244, 67, 54, 0.85);
+    color: #ffffff;
+    transform: scale(1.15) rotate(90deg);
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.6);
+}
+
+.close-icon-btn:active {
+    transform: scale(0.95);
+}
+
+/* Color-Coded Action Buttons with Default Solid Fill & Hover Glow */
+.btn-action-base {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    color: #ffffff;
+    box-shadow: none;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-export {
+    background: #2196f3;
+    border: none;
+    color: #ffffff;
+}
+
+.btn-export:hover {
+    background: #2196f3;
+    color: #ffffff;
+    box-shadow: 0 0 18px rgba(33, 150, 243, 0.7), 0 4px 15px rgba(33, 150, 243, 0.5);
+    transform: translateY(-2px) scale(1.025);
+}
+
+.btn-export:active {
+    transform: translateY(0) scale(0.965);
+}
+
+.btn-import {
+    background: #4caf50;
+    border: none;
+    color: #ffffff;
+}
+
+.btn-import:hover {
+    background: #4caf50;
+    color: #ffffff;
+    box-shadow: 0 0 18px rgba(76, 175, 80, 0.7), 0 4px 15px rgba(76, 175, 80, 0.5);
+    transform: translateY(-2px) scale(1.025);
+}
+
+.btn-import:active {
+    transform: translateY(0) scale(0.965);
+}
+
+.btn-danger {
+    background: #f44336;
+    border: none;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #f44336;
+    color: #ffffff;
+    box-shadow: 0 0 18px rgba(244, 67, 54, 0.7), 0 4px 15px rgba(244, 67, 54, 0.5);
+    transform: translateY(-2px) scale(1.025);
+}
+
+.btn-danger:active {
+    transform: translateY(0) scale(0.965);
+}
+
+.btn-action-base:disabled, .btn-action-base.disabled {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+    pointer-events: none !important;
 }
 
 /* Goal Inputs UI */
@@ -340,6 +483,24 @@ input:checked + .slider:before {
     to {
         background-position: 200% center;
     }
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    color: #ffffff;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+}
+
+.stat-value {
+    color: #ffffff;
+    font-weight: 700;
 }
     @media (max-width: 1024px) {
         .ui-panel {
@@ -537,7 +698,7 @@ input:checked + .slider:before {
 <body>
     <div class="container">
         <!-- The camera feed -->
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline webkit-playsinline muted></video>
         
         <!-- The overlay for drawing the wireframe -->
         <canvas id="output_canvas"></canvas>
@@ -545,13 +706,18 @@ input:checked + .slider:before {
         <!-- The UI -->
         <div class="ui-panel">
             <div id="active-session-ui" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-            <h1 class="title">JUMPS</h1>
-            <div id="jump-count" class="counter">0</div>
+            <h1 id="welcome-title" style="font-size: 18px; font-weight: 700; color: white; margin: 4px 0 6px 0; letter-spacing: 0.5px; text-shadow: 0 0 12px rgba(255,255,255,0.3);">Welcome to Jump Rope Tracker</h1>
+            <div id="name-input-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">
+                <label for="jumper-name-input" style="font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 600; white-space: nowrap;">Enter Name:</label>
+                <input type="text" id="jumper-name-input" placeholder="Your name" maxlength="30" style="flex: 1; padding: 6px 10px; font-size: 13px; font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #ffffff; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; box-sizing: border-box;">
+            </div>
+            <h1 id="jumps-header" class="title" style="display: none;">JUMPS</h1>
+            <div id="jump-count" class="counter" style="display: none;">0</div>
             <div id="streak-counter" class="streak-text" style="display: none;">0 STREAK! 🔥</div>
             <div id="set-progress" class="set-progress" style="display: none;">Set 1 / 15</div>
-            <div id="timer" class="timer" style="display: none; font-size: 48px; font-weight: 800; color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; margin-bottom: 10px; text-shadow: 0 0 15px rgba(255,255,255,0.2);">00:00</div>
+            <div id="timer" class="timer" style="display: none; font-size: 30px; font-weight: 800; color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; margin-bottom: 2px; text-shadow: 0 0 15px rgba(255,255,255,0.2);">00:00</div>
             
-            <div id="goal-settings" class="goal-settings" style="display: none; margin-top: 15px;">
+            <div id="goal-settings" class="goal-settings" style="display: flex; margin-top: 10px;">
                 <div class="goal-toggle-wrapper">
                     <span>Set Jump Rope Goal</span>
                     <label class="switch">
@@ -559,14 +725,14 @@ input:checked + .slider:before {
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="goal-inputs" class="goal-inputs" style="justify-content: center; gap: 20px; margin-top: 15px;">
+                <div id="goal-inputs" class="goal-inputs" style="justify-content: center; gap: 14px; margin-top: 8px;">
                     <div class="goal-input-group">
-                        <label for="target-reps" style="font-size: 16px;">Reps per set</label>
-                        <input type="number" id="target-reps" value="25" min="1" style="font-size: 20px; padding: 10px;">
+                        <label for="target-reps" style="font-size: 14px;">Reps per set</label>
+                        <input type="number" id="target-reps" value="25" min="1" style="font-size: 16px; padding: 6px 10px;">
                     </div>
                     <div class="goal-input-group">
-                        <label for="target-sets" style="font-size: 16px;">Sets</label>
-                        <input type="number" id="target-sets" value="2" min="1" style="font-size: 20px; padding: 10px;">
+                        <label for="target-sets" style="font-size: 14px;">Sets</label>
+                        <input type="number" id="target-sets" value="2" min="1" style="font-size: 16px; padding: 6px 10px;">
                     </div>
                 </div>
                 <div class="goal-toggle-wrapper" style="margin-top: 15px;">
@@ -590,21 +756,223 @@ input:checked + .slider:before {
                 </div>
             </div>
 
-            <button id="start-btn" class="start-button" style="display: none; margin-top: 30px; font-size: 22px; padding: 15px 30px;">Start camera & jump rope session</button>
-            <div id="session-controls" style="display: none; justify-content: center; gap: 10px; margin-top: 15px;">
-                <button id="pause-btn" class="pause-button" style="margin-top: 0;">Pause Session</button>
-                <button id="add-goal-btn" class="pause-button" style="display: none; background: #2196f3; margin-top: 0; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);">Add Goal</button>
+            <button id="start-btn" class="start-button" style="display: block; width: 100%; margin-top: 10px; font-size: 14px; padding: 8px 18px; border-radius: 12px;">Start camera & jump rope session</button>
+            <button id="history-btn" class="history-button" style="display: block; width: 100%; margin-top: 8px; font-size: 14px; padding: 8px 18px; border-radius: 12px;">View Workout History</button>
+            <div id="session-controls" style="display: none; justify-content: center; gap: 8px; margin-top: 6px;">
+                <button id="pause-btn" class="pause-button" style="margin-top: 0; padding: 6px 14px; font-size: 13px; border-radius: 10px;">Pause Session</button>
+                <button id="add-goal-btn" class="pause-button" style="display: none; background: #2196f3; margin-top: 0; padding: 6px 14px; font-size: 13px; border-radius: 10px; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);">Add Goal</button>
             </div>
-            <button id="done-btn" class="done-button" style="display: none;">Done with jump rope session.</button>
+            <button id="done-btn" class="done-button" style="display: none; margin-top: 6px; padding: 6px 14px; font-size: 13px; border-radius: 10px;">Done with jump rope session.</button>
             <div id="countdown-container" style="display: none; flex-direction: column; align-items: center; margin-top: 25px; margin-bottom: 10px;">
-                <div id="countdown-number" style="font-size: 100px; font-weight: 800; color: #ff5722; text-shadow: 0 0 30px rgba(255, 87, 34, 0.8); line-height: 1;">10</div>
+                <div id="countdown-number" style="font-size: 84px; font-weight: 800; color: #ff5722; text-shadow: 0 0 30px rgba(255, 87, 34, 0.8); line-height: 1;">10</div>
                 <div style="font-size: 16px; color: white; margin-top: 10px; font-weight: 600; letter-spacing: 2px;">GET IN POSITION</div>
+            </div>
+
+            <!-- Animated Camera Loading Box -->
+            <div id="camera-loading-box" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 18px 10px; width: 100%;">
+                <div style="width: 32px; height: 32px; border: 3px solid rgba(255,87,34,0.25); border-top-color: #ff5722; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px;"></div>
+                <div style="font-size: 14px; font-weight: 700; color: white; letter-spacing: 0.5px;">Starting Camera Feed...</div>
+                <div style="font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px;">Preparing Pose Tracking Engine</div>
+            </div>
+            
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+            </div> <!-- End active-session-ui -->
+            
+            <!-- Mid-Session Goal Panel embedded inside top-left .ui-panel -->
+            <div id="mid-session-goal-panel" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                <h2 style="margin: 0 0 10px 0; color: #2196f3; letter-spacing: 1px; font-size: 18px; font-weight: 800;">ADD GOAL MID-SESSION</h2>
+                <div class="goal-inputs show" style="justify-content: center; margin: 10px 0 15px 0; gap: 14px; width: 100%;">
+                    <div class="goal-input-group">
+                        <label style="font-size: 13px;">Reps per set</label>
+                        <input type="number" id="mid-target-reps" value="25" min="1" style="font-size: 15px; padding: 6px; width: 75px;">
+                    </div>
+                    <div class="goal-input-group">
+                        <label style="font-size: 13px;">Sets</label>
+                        <input type="number" id="mid-target-sets" value="2" min="1" style="font-size: 15px; padding: 6px; width: 75px;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+                    <button id="mid-session-apply-btn" class="start-button" style="margin-top: 0; font-size: 13px; padding: 8px 16px; flex: 1;">Apply Goal</button>
+                    <button id="mid-session-cancel-btn" class="cancel-button" style="margin-top: 0; font-size: 13px; padding: 8px 16px; flex: 1;">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Workout History Panel embedded inside top-left .ui-panel -->
+            <div id="history-panel" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px;">
+                    <h2 style="margin: 0; color: #ff5722; letter-spacing: 1px; font-size: 18px; font-weight: 800;">WORKOUT HISTORY</h2>
+                    <button id="close-history-btn" class="close-icon-btn">✕</button>
+                </div>
+                
+                <!-- Lifetime Summary Grid -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; width: 100%; margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+                    <div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 600;">Lifetime Jumps</div>
+                        <div id="hist-total-jumps" style="font-size: 18px; font-weight: 800; color: #00ff00;">0</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 600;">Sessions</div>
+                        <div id="hist-total-sessions" style="font-size: 18px; font-weight: 800; color: #00e5ff;">0</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 600;">Active Time</div>
+                        <div id="hist-total-time" style="font-size: 14px; font-weight: 700; color: white;">00:00</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 600;">Avg Speed</div>
+                        <div id="hist-avg-speed" style="font-size: 14px; font-weight: 700; color: #ff9800;">0 JPM</div>
+                    </div>
+                </div>
+
+                <!-- Search Bar (shown when > 5 sessions) -->
+                <div id="history-search-bar" style="display: none; width: 100%; margin-bottom: 8px; position: relative;">
+                    <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; color: rgba(255,255,255,0.4); pointer-events: none;">🔍</span>
+                    <input type="text" id="history-search-input" placeholder="Search by date (e.g. Jul, 2026, 23)..." style="width: 100%; padding: 8px 12px 8px 32px; font-size: 13px; font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #ffffff; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; box-sizing: border-box;">
+                </div>
+                <div id="history-no-results" style="display: none; text-align: center; color: rgba(255,255,255,0.4); padding: 16px 10px; font-size: 13px;">No workouts match your search.</div>
+
+                <!-- Scrollable Session Cards Container -->
+                <div id="history-list-container" style="width: 100%; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Actions Toolbar -->
+                <div style="display: flex; gap: 6px; justify-content: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+                    <button id="export-history-btn" class="btn-action-base btn-export" style="flex: 1; padding: 5px 4px; font-size: 11px; text-align: center;">Export JSON</button>
+                    <button id="import-history-btn" class="btn-action-base btn-import" style="flex: 1; padding: 5px 4px; font-size: 11px; text-align: center;">Import JSON</button>
+                    <input type="file" id="import-history-file" accept=".json" style="display: none;">
+                    <button id="clear-history-btn" class="btn-action-base btn-danger" style="flex: 1; padding: 5px 4px; font-size: 11px; text-align: center;">Clear All</button>
+                </div>
+            </div>
+
+            <!-- Session Detail Panel embedded inside top-left .ui-panel -->
+            <div id="history-detail-panel" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+                    <h3 style="margin: 0; color: #ff5722; font-size: 16px; font-weight: 800;">SESSION DETAILS</h3>
+                    <button id="close-detail-btn" class="close-icon-btn">✕</button>
+                </div>
+                <div id="detail-date" style="font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 10px; font-weight: 600;">Jul 23, 2026 • 4:55 PM</div>
+                
+                <div style="width: 100%; margin: 4px 0; font-size: 14px; color: #ffffff;">
+                    <div style="margin: 4px 0; color: rgba(255, 255, 255, 0.9);">Total Jumps: <strong id="detail-jumps" style="color: #ff5722; font-size: 24px;">0</strong></div>
+                    <div id="detail-goal-summary" style="margin: 4px 0; display: none; font-size: 13px; color: rgba(255,255,255,0.8);"></div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Highest Streak:</span>
+                        <span id="detail-max-streak" class="stat-value" style="color: #ff9800; font-weight: bold;">0</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Streak Time:</span>
+                        <span id="detail-max-streak-time" class="stat-value">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Active Jump Time:</span>
+                        <span id="detail-active-time" class="stat-value">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Total Time:</span>
+                        <span id="detail-total-time" class="stat-value">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Speed:</span>
+                        <span id="detail-speed" class="stat-value">0 JPM</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Est. Distance:</span>
+                        <span id="detail-distance" class="stat-value" style="color: #ff5722; font-weight: bold;">0 mi</span>
+                    </div>
+                </div>
+                <button id="delete-session-btn" class="btn-action-base btn-danger" style="margin-top: 10px; width: 100%;">Delete Session</button>
+            </div>
+            
+            <!-- Session Complete Panel embedded inside top-left .ui-panel -->
+            <div id="stats-panel" style="display: none; flex-direction: column; align-items: center; width: 100%; color: #ffffff;">
+                <h2 style="margin: 0 0 8px 0; color: #ff5722; letter-spacing: 1px; font-size: 18px; font-weight: 800;">JUMP ROPE SESSION COMPLETE</h2>
+                
+                <div style="width: 100%; font-size: 14px; text-align: center; margin-bottom: 6px; color: #ffffff;">
+                    <div style="margin-bottom: 6px; color: rgba(255, 255, 255, 0.9);">Total Jumps: <strong id="stat-jumps" style="color: #ff5722; font-size: 26px;">0</strong></div>
+                    <div id="stat-goal-summary" style="margin-bottom: 6px; display: none; font-size: 13px; color: rgba(255,255,255,0.9);">
+                        Completed <strong id="stat-sets-done" style="color: #ffffff;">0</strong> of <strong id="stat-sets-total" style="color: #ffffff;">0</strong> Sets
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Highest Streak:</span>
+                        <span id="stat-max-streak" class="stat-value" style="color: #ff9800; font-weight: bold;">0</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Longest Streak Time:</span>
+                        <span id="stat-max-streak-time" class="stat-value" style="color: #ffffff;">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Total Time:</span>
+                        <span id="stat-total-time" class="stat-value" style="color: #ffffff;">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Active Time:</span>
+                        <span id="stat-time" class="stat-value" style="color: #ffffff;">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Speed (Jumps / Min):</span>
+                        <span id="stat-speed" class="stat-value" style="color: #ffffff;">0 JPM</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Estimated Distance:</span>
+                        <span id="stat-dist" class="stat-value" style="color: #ff5722; font-weight: bold;">0 mi</span>
+                    </div>
+                </div>
+                
+                <div id="restart-goal-settings" class="goal-settings" style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; width: 100%;">
+                    <div class="goal-toggle-wrapper">
+                        <span style="font-size: 13px;">Set Goal for Next Session</span>
+                        <label class="switch">
+                            <input type="checkbox" id="restart-goal-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="restart-goal-inputs" class="goal-inputs" style="justify-content: center; gap: 10px; margin-top: 6px;">
+                        <div class="goal-input-group">
+                            <label for="restart-target-reps" style="font-size: 12px;">Reps per set</label>
+                            <input type="number" id="restart-target-reps" value="25" min="1" style="font-size: 14px; padding: 4px 6px;">
+                        </div>
+                        <div class="goal-input-group">
+                            <label for="restart-target-sets" style="font-size: 12px;">Sets</label>
+                            <input type="number" id="restart-target-sets" value="2" min="1" style="font-size: 14px; padding: 4px 6px;">
+                        </div>
+                    </div>
+                    <div class="goal-toggle-wrapper" style="margin-top: 6px;">
+                        <span style="font-size: 13px;">Advanced Flow Settings</span>
+                        <label class="switch">
+                            <input type="checkbox" id="restart-flow-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="restart-flow-inputs" class="goal-inputs" style="flex-direction: column; gap: 4px; align-items: center; padding-left: 0; margin-top: 4px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; font-size: 13px;">
+                            <input type="checkbox" id="restart-remove-pauses" style="width: 16px; height: 16px;"> Skip breaks between sets
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; font-size: 13px;">
+                            <input type="checkbox" id="restart-remove-countdown" style="width: 16px; height: 16px;"> Skip countdown after 1st set
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                            <label for="restart-countdown-duration" style="font-size: 12px; color: rgba(255,255,255,0.9);">Countdown Timer (sec):</label>
+                            <input type="number" id="restart-countdown-duration" value="10" min="1" max="60" style="font-size: 13px; padding: 3px; width: 50px; text-align: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px;">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="restart-btn" class="start-button" style="margin-top: 8px; width: 100%; font-size: 14px; padding: 8px 18px; border-radius: 10px;">start new jump rope session</button>
+                <button id="save-workout-btn" class="btn-action-base btn-export" style="margin-top: 6px; width: 100%; padding: 8px 18px; font-size: 13px;">Save Workout to File</button>
+                <div id="auto-save-status" style="display: none; font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; text-align: center;"></div>
+                <button id="stats-history-btn" class="history-button" style="margin-top: 6px;">View Workout History</button>
             </div>
             
             <!-- Bounds Warning Overlay -->
             <div id="bounds-warning" class="warning-box">
                 <h2 style="margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">OUT OF FRAME</h2>
-                <div style="margin-top: 10px; font-size: 18px; font-weight: 600;">Ensure green rectangle is entirely in view of camera</div>
+                <div style="margin-top: 10px; font-size: 18px; font-weight: 600;">Ensure green rectangle & hips are entirely in view of camera</div>
             </div>
             </div> <!-- End active-session-ui -->
             
@@ -621,103 +989,7 @@ input:checked + .slider:before {
         </div>
     </div>
 
-<!-- Mid-Session Goal Overlay -->
-    <div id="mid-session-goal-overlay" class="overlay-anim" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
-        <div style="text-align: center; color: white; padding: 20px 40px;">
-            <h2 style="margin-top: 0; color: #2196f3; letter-spacing: 2px; font-size: 32px;">ADD GOAL</h2>
-            <div class="goal-inputs show" style="justify-content: center; margin: 30px 0; gap: 20px;">
-                <div class="goal-input-group">
-                    <label style="font-size: 18px;">Reps per set</label>
-                    <input type="number" id="mid-target-reps" value="25" min="1" style="font-size: 22px; padding: 12px; width: 90px;">
-                </div>
-                <div class="goal-input-group">
-                    <label style="font-size: 18px;">Sets</label>
-                    <input type="number" id="mid-target-sets" value="2" min="1" style="font-size: 22px; padding: 12px; width: 90px;">
-                </div>
-            </div>
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <button id="mid-session-apply-btn" class="start-button" style="margin-top: 0; font-size: 20px; padding: 15px 30px;">Apply Goal</button>
-                <button id="mid-session-cancel-btn" class="cancel-button" style="margin-top: 0; font-size: 20px; padding: 15px 30px;">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-<!-- Stats Overlay -->
-    <div id="stats-overlay" class="overlay-anim" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
-        <div style="text-align: center; color: white; padding: 15px 25px;">
-            <h2 style="margin-top: 0; margin-bottom: 10px; color: #ff5722; letter-spacing: 2px; font-size: 26px;">JUMP ROPE SESSION COMPLETE</h2>
-            <div style="margin: 10px 0; font-size: 22px;">
-                <div style="margin: 6px 0;">Total Jumps: <strong id="stat-jumps" style="color: #ff5722; font-size: 28px;">0</strong></div>
-                <div id="stat-goal-summary" style="margin: 6px 0; display: none; font-size: 18px; color: rgba(255,255,255,0.7);">
-                    Completed <strong id="stat-sets-done" style="color: white;">0</strong> of <strong id="stat-sets-total" style="color: white;">0</strong> Sets
-                </div>
-                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
-                    <span class="stat-label">Highest Streak:</span>
-                    <span id="stat-max-streak" class="stat-value" style="color: #ff9800; font-weight: bold; font-size: 20px;">0</span>
-                </div>
-                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
-                    <span class="stat-label">Longest Streak Time:</span>
-                    <span id="stat-max-streak-time" class="stat-value" style="font-size: 20px;">00:00</span>
-                </div>
-                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
-                    <span class="stat-label">Total Time:</span>
-                    <span id="stat-total-time" class="stat-value" style="font-size: 20px;">00:00</span>
-                </div>
-                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
-                    <span class="stat-label">Active Time:</span>
-                    <span id="stat-time" class="stat-value" style="font-size: 20px;">00:00</span>
-                </div>
-                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
-                    <span class="stat-label">Speed (Jumps / Min):</span>
-                    <span id="stat-speed" class="stat-value" style="font-size: 20px;">0 JPM</span>
-                </div>
-                <div class="stat-item" style="font-size: 18px; margin-bottom: 6px;">
-                    <span class="stat-label">Estimated Distance:</span>
-                    <span id="stat-dist" class="stat-value" style="color: #ff5722; font-weight: bold; font-size: 20px;">0 mi</span>
-                </div>
-            
-            <div id="restart-goal-settings" class="goal-settings" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                <div class="goal-toggle-wrapper">
-                    <span>Set Goal for Next Session</span>
-                    <label class="switch">
-                        <input type="checkbox" id="restart-goal-toggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div id="restart-goal-inputs" class="goal-inputs" style="justify-content: center; gap: 15px; margin-top: 10px;">
-                    <div class="goal-input-group">
-                        <label for="restart-target-reps" style="font-size: 15px;">Reps per set</label>
-                        <input type="number" id="restart-target-reps" value="25" min="1" style="font-size: 18px; padding: 8px;">
-                    </div>
-                    <div class="goal-input-group">
-                        <label for="restart-target-sets" style="font-size: 15px;">Sets</label>
-                        <input type="number" id="restart-target-sets" value="2" min="1" style="font-size: 18px; padding: 8px;">
-                    </div>
-                </div>
-                <div class="goal-toggle-wrapper" style="margin-top: 12px;">
-                    <span>Advanced Flow Settings</span>
-                    <label class="switch">
-                        <input type="checkbox" id="restart-flow-toggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div id="restart-flow-inputs" class="goal-inputs" style="flex-direction: column; gap: 8px; align-items: center; padding-left: 0; margin-top: 8px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: white; font-size: 15px;">
-                        <input type="checkbox" id="restart-remove-pauses" style="width: 20px; height: 20px;"> Skip breaks between sets
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: white; font-size: 15px;">
-                        <input type="checkbox" id="restart-remove-countdown" style="width: 20px; height: 20px;"> Skip countdown after 1st set
-                    </label>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                        <label for="restart-countdown-duration" style="font-size: 14px; color: rgba(255,255,255,0.9);">Countdown Timer (sec):</label>
-                        <input type="number" id="restart-countdown-duration" value="10" min="1" max="60" style="font-size: 15px; padding: 5px; width: 60px; text-align: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;">
-                    </div>
-                </div>
-            </div>
-
-            <button id="restart-btn" class="start-button" style="margin-top: 15px; font-size: 18px; padding: 12px 24px;">start new jump rope session</button>
-        </div>
-    </div>
+    <!-- Status text -->
 
     <div id="status" class="status-text">Loading Model...</div>
         </div>
@@ -731,10 +1003,17 @@ input:checked + .slider:before {
     
 
     <script type="module">
-import {
-    PoseLandmarker,
-    FilesetResolver
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/vision_bundle.js";
+let PoseLandmarker, FilesetResolver;
+try {
+    const visionModule = await import("./vision_bundle.js");
+    PoseLandmarker = visionModule.PoseLandmarker;
+    FilesetResolver = visionModule.FilesetResolver;
+} catch (importErr) {
+    console.warn("Local module import failed, falling back to CDN module:", importErr);
+    const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/vision_bundle.js");
+    PoseLandmarker = visionModule.PoseLandmarker;
+    FilesetResolver = visionModule.FilesetResolver;
+}
 
 const video = document.getElementById('video');
 const canvas = document.getElementById('output_canvas');
@@ -884,26 +1163,42 @@ const POSE_CONNECTIONS = [
 // Initialize MediaPipe Tasks
 async function initializeModel() {
     try {
-        const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/wasm"
-        );
+        // Stage 1: Try local WASM + local model
+        const vision = await FilesetResolver.forVisionTasks("./wasm");
         poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
             baseOptions: {
-                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
+                modelAssetPath: "./pose_landmarker_full.task",
                 delegate: "CPU"
             },
             runningMode: runningMode,
-            minPoseDetectionConfidence: 0.6,
-            minPosePresenceConfidence: 0.6,
-            minTrackingConfidence: 0.6
+            minPoseDetectionConfidence: 0.5,
+            minPosePresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5
         });
-        statusText.innerText = "Ready!";
-        startBtn.style.display = "block";
-        goalSettings.style.display = "flex";
-    } catch (error) {
-        console.error(error);
-        statusText.innerText = "Error loading model. Check console.";
+        console.log("Loaded MediaPipe model locally!");
+    } catch (localErr) {
+        console.warn("Local model initialization failed, attempting CDN fallback:", localErr);
+        try {
+            // Stage 2: Fallback to CDN WASM + CDN model
+            const visionCDN = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/wasm");
+            poseLandmarker = await PoseLandmarker.createFromOptions(visionCDN, {
+                baseOptions: {
+                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
+                    delegate: "CPU"
+                },
+                runningMode: runningMode,
+                minPoseDetectionConfidence: 0.5,
+                minPosePresenceConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            console.log("Loaded MediaPipe model from CDN!");
+        } catch (cdnErr) {
+            console.error("CDN model initialization failed:", cdnErr);
+        }
     }
+    statusText.innerText = "Ready!";
+    startBtn.style.display = "block";
+    goalSettings.style.display = "flex";
 }
 
 function startCountdownInterval() {
@@ -958,21 +1253,86 @@ function startSessionWithCountdown() {
 initializeModel();
 
 startBtn.addEventListener('click', async () => {
-    startBtn.style.display = "none";
-    statusText.style.display = "block";
-    statusText.innerText = "Requesting camera access...";
-    try {
-        // Request camera with facingMode: user (selfie camera)
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+    // 1. Immediately fade out title screen controls to avoid frozen box state
+    const titleScreenElems = [
+        document.getElementById('welcome-title'),
+        goalSettings,
+        startBtn,
+        historyBtn
+    ];
+    
+    titleScreenElems.forEach(el => {
+        if (el) el.classList.add('fade-out');
+    });
+
+    const cameraLoadingBox = document.getElementById('camera-loading-box');
+
+    setTimeout(() => {
+        titleScreenElems.forEach(el => {
+            if (el) {
+                el.style.display = "none";
+                el.classList.remove('fade-out');
+            }
         });
+        if (cameraLoadingBox) {
+            cameraLoadingBox.style.display = "flex";
+            cameraLoadingBox.classList.add('fade-in');
+        }
+    }, 180);
+
+    statusText.style.display = "none";
+    
+    try {
+        let stream;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
+        } catch (camErr) {
+            console.warn("Fallback to generic video constraint:", camErr);
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
         video.srcObject = stream;
-        video.addEventListener("loadeddata", predictWebcam);
+        video.onloadeddata = () => {
+            cameraActive = true;
+            predictWebcam();
+        };
+        try {
+            await video.play();
+        } catch (playErr) {
+            console.warn("Video play warning:", playErr);
+        }
         cameraActive = true;
+        predictWebcam();
+        
+        // 2. Camera active! Hide camera loading box and transition smoothly into Active Workout UI
+        if (cameraLoadingBox) {
+            cameraLoadingBox.style.display = "none";
+            cameraLoadingBox.classList.remove('fade-in');
+        }
+
+        document.getElementById('jumps-header').style.display = "block";
+        jumpCountEl.style.display = "block";
         statusText.style.display = "none";
         timerEl.style.display = "block";
         doneBtn.style.display = "block";
         document.getElementById('session-controls').style.display = "flex";
+
+        const workoutElems = [
+            document.getElementById('jumps-header'),
+            jumpCountEl,
+            timerEl,
+            doneBtn,
+            document.getElementById('session-controls')
+        ];
+
+        workoutElems.forEach(el => {
+            if (el) {
+                el.classList.add('fade-in');
+                setTimeout(() => el.classList.remove('fade-in'), 400);
+            }
+        });
+
         pauseBtn.innerText = "Pause Session";
         pauseBtn.style.background = "#ff9800";
         document.getElementById('add-goal-btn').style.display = goalToggle.checked ? "none" : "block";
@@ -1050,15 +1410,23 @@ startBtn.addEventListener('click', async () => {
 });
 
 function resizeCanvas() {
-    // Keep canvas dimensions synced with the video's actual resolution
-    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+    // Keep canvas dimensions synced with the video's actual resolution, with fallback to avoid 0x0 collapse
+    const vw = video.videoWidth || video.clientWidth || 640;
+    const vh = video.videoHeight || video.clientHeight || 480;
+    if (canvas.width !== vw || canvas.height !== vh) {
+        canvas.width = vw;
+        canvas.height = vh;
     }
 }
 
 function predictWebcam() {
     if (!cameraActive) return;
+    
+    // Safely wait for MediaPipe model initialization if not ready yet
+    if (!poseLandmarker) {
+        setTimeout(predictWebcam, 100);
+        return;
+    }
     
     // Prevent MediaPipe WASM crash by ensuring video has data before predicting
     if (video.readyState < 2) {
@@ -1069,8 +1437,7 @@ function predictWebcam() {
     resizeCanvas();
     
     let startTimeMs = performance.now();
-    if (lastVideoTime !== video.currentTime) {
-        lastVideoTime = video.currentTime;
+    try {
         poseLandmarker.detectForVideo(video, startTimeMs, (result) => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -1084,9 +1451,11 @@ function predictWebcam() {
                 isJumping = false;
             }
         });
+    } catch (detectErr) {
+        console.warn("Pose detection frame skipped:", detectErr);
     }
     
-    // Use setTimeout instead of requestAnimationFrame so tracking doesn't stall when the window loses focus (e.g. notifications)
+    // Use setTimeout instead of requestAnimationFrame so tracking doesn't stall when the window loses focus
     setTimeout(predictWebcam, 33);
 }
 
@@ -1147,9 +1516,16 @@ function drawWireframe(landmarks, w, h) {
     const onScreenLms = landmarks.filter(lm => lm.y >= 0 && lm.y <= 1 && lm.x >= 0 && lm.x <= 1);
     const boxLms = onScreenLms.length > 0 ? onScreenLms : landmarks;
 
-    // 1. Draw Bounding Box around on-screen body parts
-    const xCoords = boxLms.map(lm => lm.x * w);
-    const yCoords = boxLms.map(lm => lm.y * h);
+    // 1. Draw Bounding Box around on-screen body parts (guaranteeing hips are included)
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+    const hipsVisible = leftHip && rightHip && 
+                        leftHip.x >= 0 && leftHip.x <= 1 && leftHip.y >= 0 && leftHip.y <= 1 &&
+                        rightHip.x >= 0 && rightHip.x <= 1 && rightHip.y >= 0 && rightHip.y <= 1;
+
+    const keyLms = [leftHip, rightHip, ...boxLms].filter(lm => lm);
+    const xCoords = keyLms.map(lm => lm.x * w);
+    const yCoords = keyLms.map(lm => lm.y * h);
     const padding = 20;
     
     const rawXMin = Math.min(...xCoords) - padding;
@@ -1158,17 +1534,24 @@ function drawWireframe(landmarks, w, h) {
     const rawYMax = Math.max(...yCoords) + padding;
 
     let currentOutOfFrame = false;
-    if (rawXMin < 0 || rawXMax > w || rawYMin < 0 || rawYMax > h) {
+    if (!hipsVisible || rawXMin < 0 || rawXMax > w || rawYMin < 0 || rawYMax > h) {
         currentOutOfFrame = true;
     }
 
-    if (currentOutOfFrame && !isOutOfFrame) {
+    const isConfigActive = (
+        document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
+        document.getElementById('history-panel')?.style.display === "flex" ||
+        document.getElementById('history-detail-panel')?.style.display === "flex" ||
+        document.getElementById('stats-panel')?.style.display === "flex"
+    );
+
+    if (currentOutOfFrame && !isOutOfFrame && !isConfigActive) {
         isOutOfFrame = true;
         boundsWarning.classList.add("show");
         if (!isPaused && cameraActive && !isCountdownActive) {
             accumulatedTime += Date.now() - sessionStartTime;
         }
-    } else if (!currentOutOfFrame && isOutOfFrame) {
+    } else if ((!currentOutOfFrame || isConfigActive) && isOutOfFrame) {
         isOutOfFrame = false;
         boundsWarning.classList.remove("show");
         if (!isPaused && cameraActive && !isCountdownActive) {
@@ -1198,17 +1581,16 @@ function drawWireframe(landmarks, w, h) {
         frozenBoxW = null;
         frozenBoxH = null;
     } else if (iceState === 1) {
-        // Frozen Ice Block - Fixed physical dimensions (no resizing while frozen!)
-        if (frozenBoxX === null) {
-            frozenBoxX = xMin;
-            frozenBoxY = yMin;
+        // Frozen Ice Block - Locked physical dimensions (width & height lock, moves with jumper!)
+        if (frozenBoxW === null || frozenBoxH === null) {
             frozenBoxW = bw;
             frozenBoxH = bh;
         }
-        const fX = frozenBoxX;
-        const fY = frozenBoxY;
         const fW = frozenBoxW;
         const fH = frozenBoxH;
+        // Center the fixed-size ice block around current jumper position so it moves with the stick figure
+        const fX = (xMin + bw / 2) - fW / 2;
+        const fY = (yMin + bh / 2) - fH / 2;
         const fMaxX = fX + fW;
         const fMaxY = fY + fH;
 
@@ -1282,8 +1664,10 @@ function drawWireframe(landmarks, w, h) {
     updateAndDrawIceParticles(ctx);
     
     ctx.strokeStyle = "#ff5722";
+    ctx.fillStyle = "#ff5722";
+    ctx.lineWidth = 5;
 
-    // 2. Draw connections (draw all of them, they will just clip if off-screen)
+    // 2. Draw connections (draw all stick figure lines)
     for (const [startIdx, endIdx] of POSE_CONNECTIONS) {
         const start = landmarks[startIdx];
         const end = landmarks[endIdx];
@@ -1295,8 +1679,10 @@ function drawWireframe(landmarks, w, h) {
         }
     }
 
-    // 3. Draw joints
-    for (const lm of landmarks) {
+    // 3. Draw key body joints
+    const jointIndices = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28];
+    for (const idx of jointIndices) {
+        const lm = landmarks[idx];
         if (lm) {
             ctx.beginPath();
             ctx.arc(lm.x * w, lm.y * h, 6, 0, 2 * Math.PI);
@@ -1306,6 +1692,11 @@ function drawWireframe(landmarks, w, h) {
 }
 
 function processJumpLogic(landmarks) {
+    // Lock jump counting whenever out of frame or hips are missing
+    if (isOutOfFrame) {
+        return;
+    }
+
     const leftHipLM = landmarks[23];
     const rightHipLM = landmarks[24];
     const leftShoulderLM = landmarks[11];
@@ -1634,6 +2025,7 @@ doneBtn.addEventListener('click', () => {
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     document.getElementById('session-controls').style.display = "none";
+    historyBtn.style.display = "none";
     statusText.style.display = "none";
     
     if (explicitPauseStartTime) {
@@ -1695,7 +2087,38 @@ doneBtn.addEventListener('click', () => {
         document.getElementById('restart-countdown-duration').value = countdownDuration;
     }
     
-    openOverlay(statsOverlay);
+    const statsPanel = document.getElementById('stats-panel');
+    activeSessionUI.classList.add('fade-out');
+    
+    setTimeout(() => {
+        activeSessionUI.style.display = "none";
+        activeSessionUI.classList.remove('fade-out');
+        historyPanel.style.display = "none";
+        historyDetailPanel.style.display = "none";
+        statsPanel.style.display = "flex";
+        statsPanel.classList.add('fade-in');
+        historyBtn.style.display = "none";
+        doneBtn.style.display = "none";
+        setTimeout(() => statsPanel.classList.remove('fade-in'), 350);
+    }, 180);
+    
+    // Auto-save completed session to JSON History
+    if (jumpCount > 0) {
+        const sessionRecord = {
+            id: Date.now().toString(),
+            dateStr: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
+            name: localStorage.getItem('jr_jumper_name') || '',
+            jumps: jumpCount,
+            activeTime: `${mins}:${secs}`,
+            totalTime: `${tMins}:${tSecs}`,
+            speed: jpm,
+            distance: `${distanceMiles} mi`,
+            maxStreak: maxStreak,
+            maxStreakTime: `${sMins}:${sSecs}`,
+            goalInfo: goalMode ? `Completed ${(currentReps >= targetReps) ? currentSet : (currentSet - 1)} of ${targetSets} Sets` : null
+        };
+        saveSessionRecord(sessionRecord);
+    }
 });
 
 pauseBtn.addEventListener('click', () => {
@@ -1773,7 +2196,19 @@ continueSetBtn.addEventListener('click', () => {
 });
 
 restartBtn.addEventListener('click', () => {
-    closeOverlay(statsOverlay, true);
+    const statsPanel = document.getElementById('stats-panel');
+    statsPanel.classList.add('fade-out');
+
+    setTimeout(() => {
+        statsPanel.style.display = "none";
+        statsPanel.classList.remove('fade-out');
+        historyPanel.style.display = "none";
+        historyDetailPanel.style.display = "none";
+        activeSessionUI.style.display = "flex";
+        activeSessionUI.classList.add('fade-in');
+        setTimeout(() => activeSessionUI.classList.remove('fade-in'), 350);
+    }, 180);
+
     jumpCount = 0;
     baselineY = null;
     isJumping = false;
@@ -1832,6 +2267,7 @@ restartBtn.addEventListener('click', () => {
         video.play();
         cameraActive = true;
         document.getElementById('session-controls').style.display = "flex";
+        doneBtn.style.display = "block";
         pauseBtn.innerText = "Pause Session";
         pauseBtn.style.background = "#ff9800";
         document.getElementById('add-goal-btn').style.display = goalMode ? "none" : "block";
@@ -1861,18 +2297,40 @@ restartBtn.addEventListener('click', () => {
 });
 
 const addGoalBtn = document.getElementById('add-goal-btn');
-const midSessionGoalOverlay = document.getElementById('mid-session-goal-overlay');
+const midSessionGoalPanel = document.getElementById('mid-session-goal-panel');
 const midSessionApplyBtn = document.getElementById('mid-session-apply-btn');
 const midSessionCancelBtn = document.getElementById('mid-session-cancel-btn');
 
 addGoalBtn.addEventListener('click', () => {
     if (!goalMode) {
-        openOverlay(midSessionGoalOverlay);
+        activeSessionUI.classList.add('fade-out');
+        setTimeout(() => {
+            activeSessionUI.style.display = "none";
+            activeSessionUI.classList.remove('fade-out');
+            midSessionGoalPanel.style.display = "flex";
+            midSessionGoalPanel.classList.add('fade-in');
+            setTimeout(() => midSessionGoalPanel.classList.remove('fade-in'), 350);
+        }, 180);
     }
 });
 
+function closeMidSessionGoalPanel(onComplete) {
+    midSessionGoalPanel.classList.add('fade-out');
+    setTimeout(() => {
+        midSessionGoalPanel.style.display = "none";
+        midSessionGoalPanel.classList.remove('fade-out');
+        if (onComplete) {
+            onComplete();
+        } else {
+            activeSessionUI.style.display = "flex";
+            activeSessionUI.classList.add('fade-in');
+            setTimeout(() => activeSessionUI.classList.remove('fade-in'), 350);
+        }
+    }, 180);
+}
+
 midSessionCancelBtn.addEventListener('click', () => {
-    closeOverlay(midSessionGoalOverlay, true);
+    closeMidSessionGoalPanel();
 });
 
 midSessionApplyBtn.addEventListener('click', () => {
@@ -1882,7 +2340,7 @@ midSessionApplyBtn.addEventListener('click', () => {
     
     if (targetReps <= 0 || targetSets <= 0) {
         goalMode = false;
-        closeOverlay(midSessionGoalOverlay, true);
+        closeMidSessionGoalPanel();
         return;
     }
     
@@ -1918,19 +2376,586 @@ midSessionApplyBtn.addEventListener('click', () => {
         setCompleteTitle.style.color = "#4caf50";
         continueSetBtn.innerText = "View Final Stats";
         
-        closeOverlay(midSessionGoalOverlay, false);
-        setTimeout(() => {
+        closeMidSessionGoalPanel(() => {
             openOverlay(setCompleteOverlay);
-        }, 300);
+        });
     } else {
         const displayTotal = skipBreaks ? totalTarget : targetReps;
         jumpCountEl.innerText = `${currentReps} / ${displayTotal}`;
         setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
-        closeOverlay(midSessionGoalOverlay, true);
+        closeMidSessionGoalPanel();
     }
     
     addGoalBtn.style.display = "none";
 });
+
+// --- WORKOUT HISTORY STORAGE ENGINE & UI ---
+let jumpHistory = [];
+let selectedSessionId = null;
+let historyOrigin = 'home';
+
+const historyBtn = document.getElementById('history-btn');
+const statsHistoryBtn = document.getElementById('stats-history-btn');
+const historyPanel = document.getElementById('history-panel');
+const closeHistoryBtn = document.getElementById('close-history-btn');
+const historyListContainer = document.getElementById('history-list-container');
+const exportHistoryBtn = document.getElementById('export-history-btn');
+const importHistoryBtn = document.getElementById('import-history-btn');
+const importHistoryFile = document.getElementById('import-history-file');
+const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+const historyDetailPanel = document.getElementById('history-detail-panel');
+const closeDetailBtn = document.getElementById('close-detail-btn');
+const deleteSessionBtn = document.getElementById('delete-session-btn');
+const activeSessionUI = document.getElementById('active-session-ui');
+
+function getHistoryStorageKey() {
+    return 'jump_rope_tracker_history';
+}
+
+function loadHistoryFromStorage() {
+    try {
+        const stored = localStorage.getItem(getHistoryStorageKey());
+        if (stored) {
+            jumpHistory = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.warn("Failed loading history from localStorage:", e);
+    }
+}
+
+function saveHistoryToStorage() {
+    try {
+        const jsonString = JSON.stringify(jumpHistory);
+        localStorage.setItem(getHistoryStorageKey(), jsonString);
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.saveJumpHistory) {
+            window.webkit.messageHandlers.saveJumpHistory.postMessage(jsonString);
+        }
+    } catch (e) {
+        console.warn("Failed saving history:", e);
+    }
+}
+
+window.loadNativeHistory = function(jsonString) {
+    try {
+        if (jsonString && jsonString.trim().length > 0) {
+            jumpHistory = JSON.parse(jsonString);
+            localStorage.setItem(getHistoryStorageKey(), JSON.stringify(jumpHistory));
+            renderHistoryUI();
+        }
+    } catch (e) {
+        console.warn("Failed loading native history JSON:", e);
+    }
+};
+
+function saveSessionRecord(record) {
+    jumpHistory.unshift(record);
+    saveHistoryToStorage();
+}
+
+function renderHistoryUI() {
+    let totalJumps = 0;
+    let totalActiveSecs = 0;
+    let totalSpeedSum = 0;
+    
+    jumpHistory.forEach(s => {
+        totalJumps += s.jumps || 0;
+        if (s.activeTime) {
+            const parts = s.activeTime.split(':');
+            if (parts.length === 2) {
+                totalActiveSecs += (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+            }
+        }
+        totalSpeedSum += s.speed || 0;
+    });
+
+    const totalSessions = jumpHistory.length;
+    const avgSpeed = totalSessions > 0 ? Math.round(totalSpeedSum / totalSessions) : 0;
+    const tMins = String(Math.floor(totalActiveSecs / 60)).padStart(2, '0');
+    const tSecs = String(totalActiveSecs % 60).padStart(2, '0');
+
+    document.getElementById('hist-total-jumps').innerText = totalJumps.toLocaleString();
+    document.getElementById('hist-total-sessions').innerText = totalSessions.toString();
+    document.getElementById('hist-total-time').innerText = `${tMins}:${tSecs}`;
+    document.getElementById('hist-avg-speed').innerText = `${avgSpeed} JPM`;
+
+    historyListContainer.innerHTML = '';
+    const searchBar = document.getElementById('history-search-bar');
+    const searchInput = document.getElementById('history-search-input');
+    const noResults = document.getElementById('history-no-results');
+    noResults.style.display = 'none';
+
+    if (jumpHistory.length === 0) {
+        clearHistoryBtn.disabled = true;
+        clearHistoryBtn.classList.add('disabled');
+        searchBar.style.display = 'none';
+        historyListContainer.innerHTML = `
+            <div style="text-align: center; color: rgba(255,255,255,0.5); padding: 30px 10px; font-size: 14px;">
+                No workout history yet.<br>Complete a session to start tracking long-term progress!
+            </div>
+        `;
+        return;
+    }
+
+    clearHistoryBtn.disabled = false;
+    clearHistoryBtn.classList.remove('disabled');
+
+    // Show search bar only when > 5 sessions
+    if (jumpHistory.length > 5) {
+        searchBar.style.display = 'block';
+    } else {
+        searchBar.style.display = 'none';
+        searchInput.value = '';
+    }
+
+    buildHistoryCards(jumpHistory);
+}
+
+function buildHistoryCards(sessions) {
+    historyListContainer.innerHTML = '';
+    const noResults = document.getElementById('history-no-results');
+    
+    if (sessions.length === 0) {
+        noResults.style.display = 'block';
+        return;
+    }
+    noResults.style.display = 'none';
+
+    sessions.forEach(session => {
+        const card = document.createElement('div');
+        card.style.cssText = "background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease;";
+        card.onmouseover = () => { card.style.background = "rgba(255, 255, 255, 0.12)"; };
+        card.onmouseout = () => { card.style.background = "rgba(255, 255, 255, 0.07)"; };
+        card.onclick = () => openSessionDetails(session.id);
+
+        card.innerHTML = `
+            <div style="text-align: left;">
+                <div style="font-size: 14px; font-weight: 700; color: white;">${session.dateStr}</div>
+                <div style="font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px;">
+                    ${session.activeTime || '00:00'} • ${session.speed || 0} JPM ${session.goalInfo ? '• Goal' : ''}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 20px; font-weight: 800; color: #ff5722;">${session.jumps} <span style="font-size: 12px; font-weight: normal; color: rgba(255,255,255,0.7);">jumps</span></div>
+            </div>
+        `;
+        historyListContainer.appendChild(card);
+    });
+}
+
+// Live search filtering for workout history
+document.getElementById('history-search-input').addEventListener('input', function() {
+    const query = this.value.trim().toLowerCase();
+    if (!query) {
+        buildHistoryCards(jumpHistory);
+        return;
+    }
+    const filtered = jumpHistory.filter(s => {
+        const searchable = ((s.dateStr || '') + ' ' + (s.name || '')).toLowerCase();
+        return searchable.includes(query);
+    });
+    buildHistoryCards(filtered);
+});
+
+function openSessionDetails(id) {
+    const session = jumpHistory.find(s => s.id === id);
+    if (!session) return;
+    selectedSessionId = id;
+
+    document.getElementById('detail-date').innerText = session.dateStr;
+    document.getElementById('detail-jumps').innerText = session.jumps;
+    document.getElementById('detail-max-streak').innerText = session.maxStreak || 0;
+    document.getElementById('detail-max-streak-time').innerText = session.maxStreakTime || '00:00';
+    document.getElementById('detail-active-time').innerText = session.activeTime || '00:00';
+    document.getElementById('detail-total-time').innerText = session.totalTime || '00:00';
+    document.getElementById('detail-speed').innerText = `${session.speed || 0} JPM`;
+    document.getElementById('detail-distance').innerText = session.distance || '0 mi';
+
+    const detailGoal = document.getElementById('detail-goal-summary');
+    if (session.goalInfo) {
+        detailGoal.innerText = session.goalInfo;
+        detailGoal.style.display = 'block';
+    } else {
+        detailGoal.style.display = 'none';
+    }
+
+    historyPanel.classList.add('fade-out');
+    setTimeout(() => {
+        historyPanel.style.display = "none";
+        historyPanel.classList.remove('fade-out');
+        historyDetailPanel.style.display = "flex";
+        historyDetailPanel.classList.add('fade-in');
+        setTimeout(() => historyDetailPanel.classList.remove('fade-in'), 350);
+    }, 180);
+}
+
+function showHistoryInPanel() {
+    loadHistoryFromStorage();
+    renderHistoryUI();
+    
+    const activeScreen = (historyOrigin === 'stats') ? document.getElementById('stats-panel') : activeSessionUI;
+    if (activeScreen && activeScreen.style.display !== "none") {
+        activeScreen.classList.add('fade-out');
+    }
+    
+    setTimeout(() => {
+        if (activeSessionUI) {
+            activeSessionUI.style.display = "none";
+            activeSessionUI.classList.remove('fade-out');
+        }
+        const statsPanel = document.getElementById('stats-panel');
+        if (statsPanel) {
+            statsPanel.style.display = "none";
+            statsPanel.classList.remove('fade-out');
+        }
+        historyDetailPanel.style.display = "none";
+        historyPanel.style.display = "flex";
+        historyPanel.classList.add('fade-in');
+        setTimeout(() => historyPanel.classList.remove('fade-in'), 350);
+    }, 180);
+}
+
+historyBtn.addEventListener('click', () => {
+    historyOrigin = 'home';
+    showHistoryInPanel();
+});
+
+if (statsHistoryBtn) {
+    statsHistoryBtn.addEventListener('click', () => {
+        historyOrigin = 'stats';
+        showHistoryInPanel();
+    });
+}
+
+closeHistoryBtn.addEventListener('click', () => {
+    historyPanel.classList.add('fade-out');
+    historyDetailPanel.classList.add('fade-out');
+    
+    setTimeout(() => {
+        historyPanel.style.display = "none";
+        historyPanel.classList.remove('fade-out');
+        historyDetailPanel.style.display = "none";
+        historyDetailPanel.classList.remove('fade-out');
+        
+        if (historyOrigin === 'stats') {
+            const statsPanel = document.getElementById('stats-panel');
+            if (statsPanel) {
+                statsPanel.style.display = "flex";
+                statsPanel.classList.add('fade-in');
+                setTimeout(() => statsPanel.classList.remove('fade-in'), 350);
+            }
+        } else {
+            activeSessionUI.style.display = "flex";
+            activeSessionUI.classList.add('fade-in');
+            setTimeout(() => activeSessionUI.classList.remove('fade-in'), 350);
+        }
+    }, 180);
+});
+
+closeDetailBtn.addEventListener('click', () => {
+    historyDetailPanel.classList.add('fade-out');
+    setTimeout(() => {
+        historyDetailPanel.style.display = "none";
+        historyDetailPanel.classList.remove('fade-out');
+        historyPanel.style.display = "flex";
+        historyPanel.classList.add('fade-in');
+        setTimeout(() => historyPanel.classList.remove('fade-in'), 350);
+    }, 180);
+});
+
+deleteSessionBtn.addEventListener('click', () => {
+    if (!selectedSessionId) return;
+    if (confirm("Delete this session record?")) {
+        jumpHistory = jumpHistory.filter(s => s.id !== selectedSessionId);
+        saveHistoryToStorage();
+        renderHistoryUI();
+        historyDetailPanel.style.display = "none";
+        historyPanel.style.display = "flex";
+    }
+});
+
+clearHistoryBtn.addEventListener('click', () => {
+    if (jumpHistory.length === 0) return;
+    if (confirm("Are you sure you want to clear ALL workout history? This cannot be undone.")) {
+        jumpHistory = [];
+        saveHistoryToStorage();
+        renderHistoryUI();
+    }
+});
+
+exportHistoryBtn.addEventListener('click', () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jumpHistory, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", getHistoryFilename());
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+});
+
+importHistoryBtn.addEventListener('click', () => {
+    importHistoryFile.click();
+});
+
+importHistoryFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const imported = JSON.parse(event.target.result);
+            if (Array.isArray(imported)) {
+                jumpHistory = imported;
+                saveHistoryToStorage();
+                renderHistoryUI();
+                alert("Successfully imported workout history JSON!");
+            } else {
+                alert("Invalid JSON format. Expected an array of session records.");
+            }
+        } catch (err) {
+            alert("Error parsing JSON file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+});
+
+// Load history on initial page load
+loadHistoryFromStorage();
+
+// --- JUMPER NAME: CACHE & PERSONALIZE ---
+const jumperNameInput = document.getElementById('jumper-name-input');
+const nameInputRow = document.getElementById('name-input-row');
+const welcomeTitle = document.getElementById('welcome-title');
+const cachedName = localStorage.getItem('jr_jumper_name');
+
+if (cachedName && cachedName.trim().length > 0) {
+    // Name already saved — show greeting, hide input row
+    welcomeTitle.innerText = `Welcome back, ${cachedName}!`;
+    nameInputRow.style.display = 'none';
+} else {
+    // No name yet — show input row
+    nameInputRow.style.display = 'flex';
+}
+
+// Save name to cache as user types
+jumperNameInput.addEventListener('input', () => {
+    const name = jumperNameInput.value.trim();
+    if (name.length > 0) {
+        localStorage.setItem('jr_jumper_name', name);
+        welcomeTitle.innerText = `Welcome, ${name}!`;
+    } else {
+        localStorage.removeItem('jr_jumper_name');
+        welcomeTitle.innerText = 'Welcome to Jump Rope Tracker';
+    }
+});
+
+// Also hide name input row once a session starts (it's already saved by then)
+const _origStartClick = startBtn.onclick;
+startBtn.addEventListener('click', () => {
+    nameInputRow.style.display = 'none';
+}, { capture: true });
+
+// --- FILE SYSTEM ACCESS API: PERSISTENT DIRECTORY SAVE/LOAD ---
+let savedDirHandle = null;
+const IDB_NAME = 'JumpRopeTrackerFS';
+const IDB_STORE = 'dirHandles';
+const IDB_KEY = 'workoutDir';
+
+// Dynamic filename based on saved jumper name
+function getHistoryFilename() {
+    const name = (localStorage.getItem('jr_jumper_name') || '').trim();
+    if (name.length > 0) {
+        const safeName = name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+        return `${safeName}_jump_rope_tracker_history.json`;
+    }
+    return 'jump_rope_tracker_history.json';
+}
+
+// IndexedDB helpers to persist the directory handle across page reloads
+function openIDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(IDB_NAME, 1);
+        request.onupgradeneeded = () => { request.result.createObjectStore(IDB_STORE); };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function saveDirHandleToIDB(handle) {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(handle, IDB_KEY);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function loadDirHandleFromIDB() {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+// Write history JSON to the chosen directory, merging with any existing file data
+async function writeHistoryToDir(handle) {
+    try {
+        const filename = getHistoryFilename();
+        // Read existing file first to merge sessions we may not have in memory
+        try {
+            const existingHandle = await handle.getFileHandle(filename);
+            const existingFile = await existingHandle.getFile();
+            const existingText = await existingFile.text();
+            const existingSessions = JSON.parse(existingText);
+            if (Array.isArray(existingSessions)) {
+                // Merge: add any file sessions whose IDs aren't already in memory
+                const memoryIds = new Set(jumpHistory.map(s => s.id));
+                const newFromFile = existingSessions.filter(s => !memoryIds.has(s.id));
+                if (newFromFile.length > 0) {
+                    jumpHistory = [...jumpHistory, ...newFromFile];
+                    // Sort by newest first (highest id = most recent timestamp)
+                    jumpHistory.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+                    localStorage.setItem(getHistoryStorageKey(), JSON.stringify(jumpHistory));
+                }
+            }
+        } catch (e) {
+            // File doesn't exist yet — that's fine, nothing to merge
+        }
+
+        const fileHandle = await handle.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify(jumpHistory, null, 2));
+        await writable.close();
+        return true;
+    } catch (e) {
+        console.warn('Failed to write history to directory:', e);
+        return false;
+    }
+}
+
+// Read history JSON from the chosen directory, merging with in-memory data
+async function readHistoryFromDir(handle) {
+    try {
+        const filename = getHistoryFilename();
+        const fileHandle = await handle.getFileHandle(filename);
+        const file = await fileHandle.getFile();
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+            // Merge file sessions with in-memory sessions
+            const memoryIds = new Set(jumpHistory.map(s => s.id));
+            const newFromFile = parsed.filter(s => !memoryIds.has(s.id));
+            if (newFromFile.length > 0) {
+                jumpHistory = [...jumpHistory, ...newFromFile];
+                jumpHistory.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+            }
+            localStorage.setItem(getHistoryStorageKey(), JSON.stringify(jumpHistory));
+            return true;
+        }
+    } catch (e) {
+        // File doesn't exist yet or is unreadable — that's fine
+        console.log('No existing history file in directory (will be created on save).');
+    }
+    return false;
+}
+
+// Prompt user to pick a save directory
+async function pickSaveDirectory() {
+    if (!window.showDirectoryPicker) {
+        // Fallback for browsers that don't support File System Access API
+        exportHistoryBtn.click();
+        return false;
+    }
+    try {
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        savedDirHandle = handle;
+        await saveDirHandleToIDB(handle);
+        return true;
+    } catch (e) {
+        console.warn('Directory picker cancelled or failed:', e);
+        return false;
+    }
+}
+
+// Try to reconnect to a previously saved directory on page load
+async function tryRestoreSavedDir() {
+    try {
+        const handle = await loadDirHandleFromIDB();
+        if (!handle) return;
+        // Verify we still have permission
+        const perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+            savedDirHandle = handle;
+            const loaded = await readHistoryFromDir(handle);
+            if (loaded) {
+                console.log('Loaded workout history from saved directory.');
+            }
+        } else {
+            // Permission expired — we'll re-prompt on next save
+            console.log('Directory permission expired, will re-prompt on next save.');
+        }
+    } catch (e) {
+        console.warn('Could not restore saved directory:', e);
+    }
+}
+
+// Auto-save to directory after session save (called from saveSessionRecord)
+const _origSaveSessionRecord = saveSessionRecord;
+saveSessionRecord = function(record) {
+    _origSaveSessionRecord(record);
+    // Auto-save to file directory if connected
+    if (savedDirHandle) {
+        writeHistoryToDir(savedDirHandle).then(ok => {
+            const statusEl = document.getElementById('auto-save-status');
+            if (statusEl && ok) {
+                statusEl.style.display = 'block';
+                statusEl.innerText = 'Auto-saved to ' + savedDirHandle.name + '/' + getHistoryFilename();
+                setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+            }
+        });
+    }
+};
+
+// Save Workout button on session complete screen
+const saveWorkoutBtn = document.getElementById('save-workout-btn');
+if (saveWorkoutBtn) {
+    saveWorkoutBtn.addEventListener('click', async () => {
+        const statusEl = document.getElementById('auto-save-status');
+        
+        if (savedDirHandle) {
+            // Already have a directory — just save
+            const ok = await writeHistoryToDir(savedDirHandle);
+            if (statusEl) {
+                statusEl.style.display = 'block';
+                statusEl.innerText = ok
+                    ? 'Saved to ' + savedDirHandle.name + '/' + getHistoryFilename()
+                    : 'Save failed — try choosing a new folder.';
+                setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+            }
+        } else {
+            // No directory yet — prompt to pick one
+            const picked = await pickSaveDirectory();
+            if (picked && savedDirHandle) {
+                const ok = await writeHistoryToDir(savedDirHandle);
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.innerText = ok
+                        ? 'Directory linked! Saved to ' + savedDirHandle.name + '/' + getHistoryFilename()
+                        : 'Save failed after picking directory.';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+                }
+                saveWorkoutBtn.innerText = 'Save Workout to File';
+            }
+        }
+    });
+}
+
+// Restore saved directory and load history on startup
+tryRestoreSavedDir();
     </script>
 </body>
 </html>
