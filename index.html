@@ -50,6 +50,108 @@ canvas {
     pointer-events: none;
 }
 
+.welcome-animation {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 50% 38%, rgba(255, 87, 34, 0.13), transparent 32%),
+        linear-gradient(180deg, #141414 0%, #080808 64%, #020202 100%);
+}
+
+.welcome-animation::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 38%;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 119px, rgba(255,255,255,0.025) 120px),
+        linear-gradient(180deg, rgba(255,255,255,0.025), transparent);
+    transform: perspective(420px) rotateX(58deg);
+    transform-origin: bottom;
+}
+
+.welcome-animation svg {
+    position: absolute;
+    width: min(72vw, 760px);
+    height: min(88vh, 680px);
+    right: clamp(1%, 8vw, 12%);
+    bottom: -3%;
+    filter: drop-shadow(0 20px 35px rgba(0,0,0,0.55));
+}
+
+.welcome-jumper {
+    transform-origin: 400px 440px;
+    animation: welcomeJump 0.72s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.welcome-shadow {
+    transform-origin: center;
+    animation: welcomeShadow 0.72s ease-in-out infinite;
+}
+
+.welcome-rope-back,
+.welcome-rope-front {
+    fill: none;
+    stroke: #444950;
+    stroke-width: 8;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.9));
+}
+
+.welcome-rope-back {
+    animation: ropeBack 0.72s linear infinite;
+}
+
+.welcome-rope-front {
+    animation: ropeFront 0.72s linear infinite;
+}
+
+.welcome-arm-left,
+.welcome-arm-right {
+    transform-box: fill-box;
+    transform-origin: top center;
+    animation: welcomeArms 0.72s ease-in-out infinite;
+}
+
+@keyframes welcomeJump {
+    0%, 100% { transform: translateY(18px); }
+    42%, 58% { transform: translateY(-28px); }
+}
+
+@keyframes welcomeShadow {
+    0%, 100% { transform: scaleX(1); opacity: 0.34; }
+    50% { transform: scaleX(0.68); opacity: 0.15; }
+}
+
+@keyframes ropeBack {
+    0%, 44% { opacity: 0.85; stroke-dashoffset: 0; }
+    50%, 100% { opacity: 0.08; stroke-dashoffset: -80; }
+}
+
+@keyframes ropeFront {
+    0%, 44% { opacity: 0.08; stroke-dashoffset: 80; }
+    50%, 100% { opacity: 0.9; stroke-dashoffset: 0; }
+}
+
+@keyframes welcomeArms {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(7deg); }
+}
+
+@media (max-width: 700px) {
+    .welcome-animation svg {
+        width: 100vw;
+        height: 72vh;
+        right: -18%;
+        opacity: 0.72;
+    }
+}
+
 .blur-background {
     filter: blur(12px) brightness(0.5);
 }
@@ -199,7 +301,7 @@ canvas {
 
 .history-button {
     background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: none;
     color: #ffffff;
     padding: 8px 18px;
     font-size: 14px;
@@ -417,6 +519,65 @@ input:checked + .slider:before {
     opacity: 1;
 }
 
+.goal-target-inputs {
+    justify-content: center;
+    gap: 14px;
+    margin-top: 8px;
+}
+
+.goal-input-group .goal-number-input {
+    padding: 6px 10px;
+    font-size: 16px;
+}
+
+.flow-settings-inputs {
+    flex-direction: column !important;
+    gap: 12px;
+    align-items: center;
+    padding-left: 0;
+    margin-top: 10px;
+}
+
+.flow-option-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.flow-option-label input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+}
+
+.flow-timing-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.flow-timing-row:first-of-type {
+    margin-top: 5px;
+}
+
+.flow-timing-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
+}
+
+.flow-number-input {
+    width: 65px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 16px;
+    text-align: center;
+}
+
 .goal-input-group {
     display: flex;
     flex-direction: column;
@@ -446,6 +607,13 @@ input:checked + .slider:before {
     border-color: var(--primary);
 }
 
+/* Keep native number-input arrows visible against every dark panel. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+    filter: invert(1) brightness(1.8);
+}
+
 .set-progress {
     font-size: 16px;
     color: rgba(255, 255, 255, 0.7);
@@ -461,27 +629,323 @@ input:checked + .slider:before {
     color: #ffeb3b;
 }
 
+.streak-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    pointer-events: none;
+    overflow: hidden;
+}
+
 .streak-text {
-    font-size: 56px;
-    font-weight: 800;
-    margin-bottom: 15px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    background: linear-gradient(270deg, #ff0055, #ff9800, #ffeb3b, #00e5ff, #d500f9, #ff0055);
-    background-size: 200% auto;
+    position: absolute;
+    font-size: clamp(72px, 9vw, 132px);
+    font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -5px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(180deg, #f6fdff 0%, #bcecff 23%, #68d2ff 58%, #20a9ef 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: rainbow-shine 3s linear infinite;
-    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-text-stroke: 3px #075995;
+    filter:
+        drop-shadow(0 0 2px #ffffff)
+        drop-shadow(0 4px 0 #043d75)
+        drop-shadow(0 6px 3px rgba(0, 0, 0, 0.8))
+        drop-shadow(0 0 14px rgba(83, 205, 255, 0.9));
+    transform: scale(0.45) rotate(var(--streak-tilt, -3deg));
+    transform-origin: center;
+    animation: streakBurst 0.42s cubic-bezier(0.16, 0.9, 0.25, 1) forwards;
 }
 
-.streak-text.pop {
-    transform: scale(1.25);
+.streak-text.side-left {
+    translate: -100% -50%;
+    transform-origin: right center;
 }
 
-@keyframes rainbow-shine {
+.streak-text.side-right {
+    translate: 0 -50%;
+    transform-origin: left center;
+}
+
+.streak-text::before,
+.streak-text::after {
+    content: "✦";
+    position: absolute;
+    -webkit-text-fill-color: #e9fbff;
+    -webkit-text-stroke: 0;
+    color: #e9fbff;
+    font-size: 0.35em;
+    filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 7px #59d1ff);
+    animation: streakSparkle 0.45s ease-out both;
+}
+
+.streak-text::before {
+    left: -0.45em;
+    top: -0.12em;
+}
+
+.streak-text::after {
+    right: -0.42em;
+    bottom: -0.05em;
+}
+
+@keyframes streakBurst {
+    0% {
+        opacity: 0;
+        transform: scale(0.45) rotate(var(--streak-tilt, -3deg));
+    }
+    18% {
+        opacity: 1;
+        transform: scale(1.22) rotate(var(--streak-tilt, -3deg));
+    }
+    32% {
+        transform: scale(1) rotate(var(--streak-tilt, -3deg));
+    }
+    76% {
+        opacity: 1;
+        transform: scale(1) rotate(var(--streak-tilt, -3deg));
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(var(--streak-tilt, -3deg));
+    }
+}
+
+.streak-text.trailing {
+    z-index: 0;
+    opacity: 0.30;
+    animation: none;
+    transform: translate(7px, 7px) scale(1) rotate(var(--streak-tilt, -3deg));
+    filter:
+        drop-shadow(0 4px 0 #043d75)
+        drop-shadow(0 8px 5px rgba(0, 0, 0, 0.9))
+        blur(0.4px);
+}
+
+.streak-layer.fading .streak-text {
+    animation: streakFadeAway 0.7s ease-in forwards;
+}
+
+@keyframes streakFadeAway {
     to {
-        background-position: 200% center;
+        opacity: 0;
+        transform: translateY(-18px) scale(0.92) rotate(var(--streak-tilt, -3deg));
+    }
+}
+
+@keyframes streakSparkle {
+    from {
+        opacity: 0;
+        transform: scale(0.3) rotate(0deg);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(35deg);
+    }
+}
+
+.monster-challenge {
+    position: absolute;
+    top: 20px;
+    right: 22px;
+    z-index: 14;
+    width: min(330px, calc(100vw - 44px));
+    padding: 18px 20px 20px;
+    box-sizing: border-box;
+    color: #ffffff;
+    text-align: center;
+    background:
+        linear-gradient(180deg, rgba(30, 18, 45, 0.94), rgba(9, 9, 18, 0.92)),
+        radial-gradient(circle at 50% 0%, rgba(255, 87, 34, 0.25), transparent 62%);
+    border: 2px solid rgba(255, 193, 7, 0.72);
+    border-radius: 18px;
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.72),
+        0 0 22px rgba(255, 152, 0, 0.22),
+        inset 0 0 18px rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+    transform-origin: top right;
+    animation: monsterEntrance 0.45s cubic-bezier(0.16, 0.9, 0.25, 1) both;
+}
+
+.monster-eyebrow {
+    color: #ffca28;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.monster-art {
+    position: relative;
+    height: 225px;
+    display: grid;
+    place-items: center;
+    margin: 1px 0 -2px;
+    transform-origin: center bottom;
+}
+
+.monster-art svg {
+    width: 210px;
+    height: 225px;
+    overflow: visible;
+    filter: drop-shadow(0 9px 7px rgba(0, 0, 0, 0.58));
+}
+
+.monster-emoji {
+    font-size: 165px;
+    line-height: 1;
+    filter: drop-shadow(0 9px 7px rgba(0, 0, 0, 0.58));
+}
+
+.monster-name {
+    margin-top: 2px;
+    color: #ffffff;
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-shadow: 0 2px 5px #000000;
+}
+
+.monster-hp-label {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 2px 6px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.monster-health-track {
+    height: 46px;
+    padding: 8px;
+    overflow: hidden;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.72);
+}
+
+.monster-health-fill {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2ed573, #8bea63);
+    box-shadow: 0 0 12px rgba(65, 229, 121, 0.68);
+    transition: width 0.32s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.monster-health-fill.warning {
+    background: linear-gradient(90deg, #ff8f00, #ffd54f);
+    box-shadow: 0 0 12px rgba(255, 179, 0, 0.72);
+}
+
+.monster-health-fill.critical {
+    background: linear-gradient(90deg, #d50000, #ff5252);
+    box-shadow: 0 0 14px rgba(255, 23, 68, 0.78);
+}
+
+.monster-art.hit {
+    animation: monsterHit 0.28s ease-out;
+}
+
+.monster-art.defeated {
+    animation: monsterDefeated 0.85s cubic-bezier(0.55, 0, 0.8, 0.2) forwards;
+}
+
+.monster-damage {
+    position: absolute;
+    top: 25px;
+    right: 35px;
+    color: #fff176;
+    font-size: 44px;
+    font-weight: 900;
+    -webkit-text-stroke: 1px #b71c1c;
+    text-shadow: 0 3px 0 #7f0000, 0 0 10px rgba(255, 235, 59, 0.8);
+    animation: monsterDamage 0.58s ease-out forwards;
+}
+
+.monster-defeated-label {
+    position: absolute;
+    inset: 38px 0 auto;
+    z-index: 2;
+    color: #ffeb3b;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    -webkit-text-stroke: 1px #b71c1c;
+    text-shadow: 0 3px 0 #7f0000, 0 0 12px rgba(255, 235, 59, 0.85);
+    animation: monsterDefeatedLabel 0.42s ease-out both;
+}
+
+@keyframes monsterEntrance {
+    from { opacity: 0; transform: translateY(-18px) scale(0.82); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes monsterHit {
+    0%, 100% { transform: translateX(0) rotate(0deg); filter: brightness(1); }
+    25% { transform: translateX(-9px) rotate(-4deg); filter: brightness(1.75); }
+    55% { transform: translateX(8px) rotate(4deg); }
+    78% { transform: translateX(-4px) rotate(-2deg); }
+}
+
+@keyframes monsterDamage {
+    from { opacity: 0; transform: translateY(10px) scale(0.55); }
+    25% { opacity: 1; transform: translateY(0) scale(1.25); }
+    to { opacity: 0; transform: translateY(-32px) scale(0.92); }
+}
+
+@keyframes monsterDefeated {
+    0% { opacity: 1; transform: scale(1) rotate(0deg); }
+    35% { opacity: 1; transform: scale(1.18, 0.76) rotate(-8deg); }
+    62% { opacity: 0.85; transform: scale(0.82, 1.15) rotate(10deg); }
+    100% { opacity: 0; transform: translateY(38px) scale(0.22, 0.08) rotate(-18deg); }
+}
+
+@keyframes monsterDefeatedLabel {
+    from { opacity: 0; transform: scale(0.45) rotate(-8deg); }
+    to { opacity: 1; transform: scale(1) rotate(-2deg); }
+}
+
+@media (max-width: 700px) {
+    .monster-challenge {
+        top: auto;
+        right: 12px;
+        bottom: 12px;
+        width: 240px;
+        padding: 12px 14px 14px;
+        transform-origin: bottom right;
+    }
+
+    .monster-art {
+        height: 155px;
+    }
+
+    .monster-art svg {
+        width: 140px;
+        height: 155px;
+    }
+
+    .monster-emoji {
+        font-size: 112px;
+    }
+
+    .monster-name {
+        font-size: 28px;
+    }
+
+    .monster-eyebrow {
+        font-size: 15px;
+    }
+
+    .monster-hp-label {
+        font-size: 14px;
     }
 }
 
@@ -663,6 +1127,13 @@ input:checked + .slider:before {
     pointer-events: none;
 }
 
+#active-session-ui.compact-workout-ui > #jumps-header,
+#active-session-ui.compact-workout-ui > #set-progress,
+#active-session-ui.compact-workout-ui > #session-controls,
+#active-session-ui.compact-workout-ui > #done-btn {
+    display: none !important;
+}
+
 #add-goal-btn {
     background: linear-gradient(135deg, #2196f3, #1976d2) !important;
     color: #ffffff;
@@ -702,18 +1173,108 @@ input:checked + .slider:before {
         
         <!-- The overlay for drawing the wireframe -->
         <canvas id="output_canvas"></canvas>
+
+        <!-- Arcade-style streak count, positioned beside the tracked jumper -->
+        <div id="streak-counter" class="streak-layer" aria-live="polite" aria-label="Current jump streak"></div>
+
+        <!-- Set-based monster challenge -->
+        <section id="monster-challenge" class="monster-challenge" style="display: none;" aria-live="polite">
+            <div id="monster-set-label" class="monster-eyebrow">SET 1 MONSTER</div>
+            <div id="monster-art" class="monster-art" aria-hidden="true"></div>
+            <div id="monster-name" class="monster-name">Potato Chip Bag</div>
+            <div class="monster-hp-label">
+                <span>MONSTER HP</span>
+                <span id="monster-hp-text">25 / 25 HP</span>
+            </div>
+            <div class="monster-health-track">
+                <div id="monster-health-fill" class="monster-health-fill"></div>
+            </div>
+        </section>
+
+        <!-- Animated startup scene behind the setup panel -->
+        <div id="welcome-animation" class="welcome-animation" aria-hidden="true">
+            <svg viewBox="0 0 800 620" role="presentation">
+                <defs>
+                    <linearGradient id="matGradient" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#303030"/>
+                        <stop offset="0.52" stop-color="#171717"/>
+                        <stop offset="1" stop-color="#090909"/>
+                    </linearGradient>
+                    <linearGradient id="shirtGradient" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#42a5f5"/>
+                        <stop offset="1" stop-color="#1565c0"/>
+                    </linearGradient>
+                    <linearGradient id="hairGradient" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#d8c083"/>
+                        <stop offset="0.55" stop-color="#b99a58"/>
+                        <stop offset="1" stop-color="#927440"/>
+                    </linearGradient>
+                </defs>
+
+                <ellipse class="welcome-shadow" cx="430" cy="542" rx="102" ry="22" fill="#000"/>
+                <path d="M190 525 L630 525 L695 585 L125 585 Z" fill="url(#matGradient)" stroke="#00ff00" stroke-width="5"/>
+                <path d="M178 545 L647 545" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                <text x="410" y="572" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="22" font-weight="800" letter-spacing="8">JUMP ZONE</text>
+
+                <path class="welcome-rope-back" d="M314 315 C300 95 570 70 558 315"/>
+
+                <g class="welcome-jumper">
+                    <circle cx="435" cy="180" r="42" fill="#f2cfb3"/>
+                    <path d="M397 179 C398 128 469 122 478 175 C460 153 423 149 397 179 Z" fill="url(#hairGradient)"/>
+                    <ellipse cx="423" cy="177" rx="7" ry="5" fill="#f7f9fa" stroke="#b0bec5" stroke-width="1"/>
+                    <ellipse cx="450" cy="177" rx="7" ry="5" fill="#f7f9fa" stroke="#b0bec5" stroke-width="1"/>
+                    <circle cx="423" cy="177" r="3.4" fill="#718a9e"/>
+                    <circle cx="450" cy="177" r="3.4" fill="#718a9e"/>
+                    <circle cx="423" cy="177" r="1.7" fill="#15232d"/>
+                    <circle cx="450" cy="177" r="1.7" fill="#15232d"/>
+                    <circle cx="424" cy="176" r="0.8" fill="#ffffff"/>
+                    <circle cx="451" cy="176" r="0.8" fill="#ffffff"/>
+                    <path d="M424 203 Q438 214 452 201" fill="none" stroke="#7b3f2b" stroke-width="4" stroke-linecap="round"/>
+
+                    <rect x="385" y="221" width="100" height="155" rx="38" fill="url(#shirtGradient)"/>
+                    <path d="M404 238 Q435 264 467 238" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="6"/>
+
+                    <g class="welcome-arm-left">
+                        <path d="M396 246 Q348 275 318 319" fill="none" stroke="#f2cfb3" stroke-width="25" stroke-linecap="round"/>
+                        <path d="M396 246 Q380 254 367 267" fill="none" stroke="url(#shirtGradient)" stroke-width="34" stroke-linecap="round"/>
+                        <circle cx="313" cy="321" r="14" fill="#f2cfb3"/>
+                        <path d="M301 334 L326 305" stroke="#111111" stroke-width="13" stroke-linecap="round"/>
+                        <path d="M305 329 L311 322 M316 316 L322 309" stroke="#e53935" stroke-width="13" stroke-linecap="butt"/>
+                    </g>
+                    <g class="welcome-arm-right">
+                        <path d="M476 246 Q526 274 554 319" fill="none" stroke="#f2cfb3" stroke-width="25" stroke-linecap="round"/>
+                        <path d="M476 246 Q492 254 505 267" fill="none" stroke="url(#shirtGradient)" stroke-width="34" stroke-linecap="round"/>
+                        <circle cx="559" cy="321" r="14" fill="#f2cfb3"/>
+                        <path d="M546 305 L571 334" stroke="#111111" stroke-width="13" stroke-linecap="round"/>
+                        <path d="M550 309 L556 316 M561 322 L567 329" stroke="#e53935" stroke-width="13" stroke-linecap="butt"/>
+                    </g>
+
+                    <path d="M417 363 Q416 430 414 498" fill="none" stroke="#f2cfb3" stroke-width="34" stroke-linecap="round"/>
+                    <path d="M453 363 Q454 430 456 498" fill="none" stroke="#f2cfb3" stroke-width="34" stroke-linecap="round"/>
+                    <path d="M389 341 H481 V365 H389 Z" fill="#6fd3bd"/>
+                    <path d="M390 358 H436 L431 405 Q412 412 392 405 Z" fill="#6fd3bd"/>
+                    <path d="M434 358 H480 L478 405 Q458 412 439 405 Z" fill="#6fd3bd"/>
+                    <path d="M385 505 L426 505" stroke="#111111" stroke-width="25" stroke-linecap="round"/>
+                    <path d="M385 503 L426 503" stroke="#ff6d00" stroke-width="11" stroke-linecap="round"/>
+                    <path d="M444 505 L485 505" stroke="#111111" stroke-width="25" stroke-linecap="round"/>
+                    <path d="M444 503 L485 503" stroke="#ff6d00" stroke-width="11" stroke-linecap="round"/>
+                </g>
+
+                <path class="welcome-rope-front" d="M314 315 C325 575 548 590 558 315"/>
+            </svg>
+        </div>
         
         <!-- The UI -->
         <div class="ui-panel">
             <div id="active-session-ui" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-            <h1 id="welcome-title" style="font-size: 18px; font-weight: 700; color: white; margin: 4px 0 6px 0; letter-spacing: 0.5px; text-shadow: 0 0 12px rgba(255,255,255,0.3);">Welcome to Jump Rope Tracker</h1>
+            <h1 id="app-title" style="font-size: 20px; font-weight: 800; color: #ff5722; margin: 4px 0 2px 0; letter-spacing: 0.8px; text-shadow: 0 0 14px rgba(255,87,34,0.35);">Jump Rope Tracker</h1>
+            <h1 id="welcome-title" style="font-size: 18px; font-weight: 700; color: white; margin: 0 0 6px 0; letter-spacing: 0.5px; text-shadow: 0 0 12px rgba(255,255,255,0.3);">Welcome!</h1>
             <div id="name-input-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">
                 <label for="jumper-name-input" style="font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 600; white-space: nowrap;">Enter Name:</label>
                 <input type="text" id="jumper-name-input" placeholder="Your name" maxlength="30" style="flex: 1; padding: 6px 10px; font-size: 13px; font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #ffffff; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; box-sizing: border-box;">
             </div>
             <h1 id="jumps-header" class="title" style="display: none;">JUMPS</h1>
             <div id="jump-count" class="counter" style="display: none;">0</div>
-            <div id="streak-counter" class="streak-text" style="display: none;">0 STREAK! 🔥</div>
             <div id="set-progress" class="set-progress" style="display: none;">Set 1 / 15</div>
             <div id="timer" class="timer" style="display: none; font-size: 30px; font-weight: 800; color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; margin-bottom: 2px; text-shadow: 0 0 15px rgba(255,255,255,0.2);">00:00</div>
             
@@ -725,14 +1286,14 @@ input:checked + .slider:before {
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="goal-inputs" class="goal-inputs" style="justify-content: center; gap: 14px; margin-top: 8px;">
+                <div id="goal-inputs" class="goal-inputs goal-target-inputs">
                     <div class="goal-input-group">
-                        <label for="target-reps" style="font-size: 14px;">Reps per set</label>
-                        <input type="number" id="target-reps" value="25" min="1" style="font-size: 16px; padding: 6px 10px;">
+                        <label for="target-reps">Reps per set</label>
+                        <input type="number" id="target-reps" class="goal-number-input" value="25" min="1">
                     </div>
                     <div class="goal-input-group">
-                        <label for="target-sets" style="font-size: 14px;">Sets</label>
-                        <input type="number" id="target-sets" value="2" min="1" style="font-size: 16px; padding: 6px 10px;">
+                        <label for="target-sets">Sets</label>
+                        <input type="number" id="target-sets" class="goal-number-input" value="2" min="1">
                     </div>
                 </div>
                 <div class="goal-toggle-wrapper" style="margin-top: 15px;">
@@ -742,16 +1303,23 @@ input:checked + .slider:before {
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="flow-inputs" class="goal-inputs" style="flex-direction: column; gap: 12px; align-items: center; padding-left: 0; margin-top: 10px;">
-                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: white; font-size: 16px;">
-                        <input type="checkbox" id="remove-pauses" style="width: 22px; height: 22px;"> Skip breaks between sets
+                <div id="flow-inputs" class="goal-inputs flow-settings-inputs">
+                    <label id="initial-skip-breaks-option" class="flow-option-label">
+                        <input type="checkbox" id="remove-pauses"> Skip breaks between sets
                     </label>
-                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: white; font-size: 16px;">
-                        <input type="checkbox" id="remove-countdown" style="width: 22px; height: 22px;"> Skip countdown after 1st set
+                    <label class="flow-option-label">
+                        <input type="checkbox" id="manual-breaks"> Pause for button press after set complete
                     </label>
-                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                        <label for="countdown-duration" style="font-size: 15px; color: rgba(255,255,255,0.9);">Countdown Timer (sec):</label>
-                        <input type="number" id="countdown-duration" value="10" min="1" max="60" style="font-size: 16px; padding: 6px; width: 65px; text-align: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;">
+                    <label id="initial-skip-countdown-option" class="flow-option-label">
+                        <input type="checkbox" id="remove-countdown"> Skip countdown after 1st set
+                    </label>
+                    <div class="flow-timing-row">
+                        <label for="countdown-duration" class="flow-timing-label">Countdown Timer at start (sec):</label>
+                        <input type="number" id="countdown-duration" class="flow-number-input" value="10" min="5" max="60">
+                    </div>
+                    <div class="flow-timing-row">
+                        <label for="cooldown-duration" class="flow-timing-label">Cooldown Between Set(s) (sec):</label>
+                        <input type="number" id="cooldown-duration" class="flow-number-input" value="30" min="0" max="300">
                     </div>
                 </div>
             </div>
@@ -827,6 +1395,10 @@ input:checked + .slider:before {
                         <div style="font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 600;">Avg Speed</div>
                         <div id="hist-avg-speed" style="font-size: 14px; font-weight: 700; color: #ff9800;">0 JPM</div>
                     </div>
+                    <div style="grid-column: span 2; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08);">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.65); text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px;">Total Monsters Killed</div>
+                        <div id="hist-total-monsters" style="font-size: 24px; font-weight: 900; color: #ffeb3b; text-shadow: 0 0 12px rgba(255,235,59,0.42);">0</div>
+                    </div>
                 </div>
 
                 <!-- Search Bar (shown when > 5 sessions) -->
@@ -840,6 +1412,8 @@ input:checked + .slider:before {
                 <div id="history-list-container" style="width: 100%; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
                     <!-- Populated dynamically -->
                 </div>
+
+                <div style="width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 8px 10px; color: #fff3cd; background: rgba(255,193,7,0.12); border: 1px solid rgba(255,193,7,0.35); border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 1.4; text-align: left; white-space: pre-wrap;">Import your workout json file then export to retain  your new workout sessions. That must be done for every workout as of right now.</div>
 
                 <!-- Actions Toolbar -->
                 <div style="display: flex; gap: 6px; justify-content: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
@@ -860,6 +1434,10 @@ input:checked + .slider:before {
                 
                 <div style="width: 100%; margin: 4px 0; font-size: 14px; color: #ffffff;">
                     <div style="margin: 4px 0; color: rgba(255, 255, 255, 0.9);">Total Jumps: <strong id="detail-jumps" style="color: #ff5722; font-size: 24px;">0</strong></div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Monsters Killed:</span>
+                        <span id="detail-monsters-killed" class="stat-value" style="color: #ffeb3b; font-weight: bold;">0</span>
+                    </div>
                     <div id="detail-goal-summary" style="margin: 4px 0; display: none; font-size: 13px; color: rgba(255,255,255,0.8);"></div>
                     <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
                         <span class="stat-label">Highest Streak:</span>
@@ -874,6 +1452,10 @@ input:checked + .slider:before {
                         <span id="detail-active-time" class="stat-value">00:00</span>
                     </div>
                     <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Time Frozen:</span>
+                        <span id="detail-freeze-time" class="stat-value" style="color: #80deea; font-weight: bold;">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
                         <span class="stat-label">Total Time:</span>
                         <span id="detail-total-time" class="stat-value">00:00</span>
                     </div>
@@ -884,6 +1466,10 @@ input:checked + .slider:before {
                     <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
                         <span class="stat-label">Est. Distance:</span>
                         <span id="detail-distance" class="stat-value" style="color: #ff5722; font-weight: bold;">0 mi</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Est. Calories Burned:</span>
+                        <span id="detail-calories" class="stat-value" style="color: #ffeb3b; font-weight: bold;">0 kcal</span>
                     </div>
                 </div>
                 <button id="delete-session-btn" class="btn-action-base btn-danger" style="margin-top: 10px; width: 100%;">Delete Session</button>
@@ -902,6 +1488,10 @@ input:checked + .slider:before {
                         <span class="stat-label">Highest Streak:</span>
                         <span id="stat-max-streak" class="stat-value" style="color: #ff9800; font-weight: bold;">0</span>
                     </div>
+                    <div id="stat-avg-streak-row" class="stat-item" style="display: none; font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Avg. Best Streak / Set:</span>
+                        <span id="stat-avg-streak-per-set" class="stat-value" style="color: #ffeb3b; font-weight: bold;">0</span>
+                    </div>
                     <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
                         <span class="stat-label">Longest Streak Time:</span>
                         <span id="stat-max-streak-time" class="stat-value" style="color: #ffffff;">00:00</span>
@@ -915,6 +1505,10 @@ input:checked + .slider:before {
                         <span id="stat-time" class="stat-value" style="color: #ffffff;">00:00</span>
                     </div>
                     <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Time Frozen:</span>
+                        <span id="stat-freeze-time" class="stat-value" style="color: #80deea; font-weight: bold;">00:00</span>
+                    </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
                         <span class="stat-label">Speed (Jumps / Min):</span>
                         <span id="stat-speed" class="stat-value" style="color: #ffffff;">0 JPM</span>
                     </div>
@@ -922,43 +1516,54 @@ input:checked + .slider:before {
                         <span class="stat-label">Estimated Distance:</span>
                         <span id="stat-dist" class="stat-value" style="color: #ff5722; font-weight: bold;">0 mi</span>
                     </div>
+                    <div class="stat-item" style="font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Est. Calories Burned:</span>
+                        <span id="stat-calories" class="stat-value" style="color: #ffeb3b; font-weight: bold;">0 kcal</span>
+                    </div>
                 </div>
                 
                 <div id="restart-goal-settings" class="goal-settings" style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; width: 100%;">
                     <div class="goal-toggle-wrapper">
-                        <span style="font-size: 13px;">Set Goal for Next Session</span>
+                        <span>Set Jump Rope Goal</span>
                         <label class="switch">
                             <input type="checkbox" id="restart-goal-toggle">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="restart-goal-inputs" class="goal-inputs" style="justify-content: center; gap: 10px; margin-top: 6px;">
+                    <div id="restart-goal-inputs" class="goal-inputs goal-target-inputs">
                         <div class="goal-input-group">
-                            <label for="restart-target-reps" style="font-size: 12px;">Reps per set</label>
-                            <input type="number" id="restart-target-reps" value="25" min="1" style="font-size: 14px; padding: 4px 6px;">
+                            <label for="restart-target-reps">Reps per set</label>
+                            <input type="number" id="restart-target-reps" class="goal-number-input" value="25" min="1">
                         </div>
                         <div class="goal-input-group">
-                            <label for="restart-target-sets" style="font-size: 12px;">Sets</label>
-                            <input type="number" id="restart-target-sets" value="2" min="1" style="font-size: 14px; padding: 4px 6px;">
+                            <label for="restart-target-sets">Sets</label>
+                            <input type="number" id="restart-target-sets" class="goal-number-input" value="2" min="1">
                         </div>
                     </div>
-                    <div class="goal-toggle-wrapper" style="margin-top: 6px;">
-                        <span style="font-size: 13px;">Advanced Flow Settings</span>
+                    <div class="goal-toggle-wrapper" style="margin-top: 15px;">
+                        <span>Advanced Flow Settings</span>
                         <label class="switch">
                             <input type="checkbox" id="restart-flow-toggle">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div id="restart-flow-inputs" class="goal-inputs" style="flex-direction: column; gap: 4px; align-items: center; padding-left: 0; margin-top: 4px;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; font-size: 13px;">
-                            <input type="checkbox" id="restart-remove-pauses" style="width: 16px; height: 16px;"> Skip breaks between sets
+                    <div id="restart-flow-inputs" class="goal-inputs flow-settings-inputs">
+                        <label id="restart-skip-breaks-option" class="flow-option-label">
+                            <input type="checkbox" id="restart-remove-pauses"> Skip breaks between sets
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: white; font-size: 13px;">
-                            <input type="checkbox" id="restart-remove-countdown" style="width: 16px; height: 16px;"> Skip countdown after 1st set
+                        <label class="flow-option-label">
+                            <input type="checkbox" id="restart-manual-breaks"> Pause for button press after set complete
                         </label>
-                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                            <label for="restart-countdown-duration" style="font-size: 12px; color: rgba(255,255,255,0.9);">Countdown Timer (sec):</label>
-                            <input type="number" id="restart-countdown-duration" value="10" min="1" max="60" style="font-size: 13px; padding: 3px; width: 50px; text-align: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px;">
+                        <label id="restart-skip-countdown-option" class="flow-option-label">
+                            <input type="checkbox" id="restart-remove-countdown"> Skip countdown after 1st set
+                        </label>
+                        <div class="flow-timing-row">
+                            <label for="restart-countdown-duration" class="flow-timing-label">Countdown Timer at start (sec):</label>
+                            <input type="number" id="restart-countdown-duration" class="flow-number-input" value="10" min="5" max="60">
+                        </div>
+                        <div class="flow-timing-row">
+                            <label for="restart-cooldown-duration" class="flow-timing-label">Cooldown Between Set(s) (sec):</label>
+                            <input type="number" id="restart-cooldown-duration" class="flow-number-input" value="30" min="0" max="300">
                         </div>
                     </div>
                 </div>
@@ -972,22 +1577,21 @@ input:checked + .slider:before {
             <!-- Bounds Warning Overlay -->
             <div id="bounds-warning" class="warning-box">
                 <h2 style="margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">OUT OF FRAME</h2>
-                <div style="margin-top: 10px; font-size: 18px; font-weight: 600;">Ensure green rectangle & hips are entirely in view of camera</div>
+                        <div style="margin-top: 10px; font-size: 18px; font-weight: 600;">Keep your body inside the purple rectangle and your feet over the green zone</div>
             </div>
-            </div> <!-- End active-session-ui -->
-            
-<!-- Set Complete Overlay -->
-    <div id="set-complete-overlay" class="overlay-anim" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
-        <div style="text-align: center; color: white; padding: 20px 40px;">
-            <h2 id="set-complete-title" style="margin-top: 0; color: #ff5722; letter-spacing: 2px; font-size: 32px;">SET 1 COMPLETE</h2>
-            <div id="set-complete-progress-text" style="font-size: 26px; font-weight: bold; margin-top: 15px; color: white;">Set 1 out of 3 completed</div>
-            <div style="margin: 25px 0 15px 0; font-size: 22px; color: rgba(255, 255, 255, 0.7);">
-                Take a breather if you want.
+            <!-- Set Complete Overlay -->
+            <div id="set-complete-overlay" class="overlay-anim" style="display: none; justify-content: center; align-items: center; flex-direction: column;">
+                <div style="text-align: center; color: white; padding: 20px 40px;">
+                    <h2 id="set-complete-title" style="margin-top: 0; color: #ff5722; letter-spacing: 2px; font-size: 32px;">SET 1 COMPLETE</h2>
+                    <div id="set-complete-progress-text" style="font-size: 26px; font-weight: bold; margin-top: 15px; color: white;">Set 1 out of 3 completed</div>
+                    <div style="margin: 25px 0 15px 0; font-size: 22px; color: rgba(255, 255, 255, 0.7);">
+                        Take a breather if you want.
+                    </div>
+                    <div id="rest-timer" style="font-size: 48px; font-weight: bold; margin-bottom: 20px; color: #ff9800; font-variant-numeric: tabular-nums;">00:00</div>
+                    <button id="continue-set-btn" class="start-button" style="margin-top: 20px; font-size: 20px; padding: 15px 30px;">Continue to Next Set</button>
+                </div>
             </div>
-            <div id="rest-timer" style="font-size: 48px; font-weight: bold; margin-bottom: 20px; color: #ff9800; font-variant-numeric: tabular-nums;">00:00</div>
-            <button id="continue-set-btn" class="start-button" style="margin-top: 20px; font-size: 20px; padding: 15px 30px;">Continue to Next Set</button>
-        </div>
-    </div>
+        </div> <!-- End ui-panel -->
 
     <!-- Status text -->
 
@@ -1032,6 +1636,13 @@ const startBtn = document.getElementById('start-btn');
 const statusText = document.getElementById('status');
 const uiPanel = document.querySelector('.ui-panel');
 const boundsWarning = document.getElementById('bounds-warning');
+const streakLayer = document.getElementById('streak-counter');
+const monsterChallengeEl = document.getElementById('monster-challenge');
+const monsterSetLabelEl = document.getElementById('monster-set-label');
+const monsterArtEl = document.getElementById('monster-art');
+const monsterNameEl = document.getElementById('monster-name');
+const monsterHpTextEl = document.getElementById('monster-hp-text');
+const monsterHealthFillEl = document.getElementById('monster-health-fill');
 
 // State flags
 let isOutOfFrame = false;
@@ -1054,15 +1665,44 @@ const restartGoalInputs = document.getElementById('restart-goal-inputs');
 const restartTargetRepsInput = document.getElementById('restart-target-reps');
 const restartTargetSetsInput = document.getElementById('restart-target-sets');
 
+const countdownDurationInputs = [
+    document.getElementById('countdown-duration'),
+    document.getElementById('restart-countdown-duration'),
+    document.getElementById('cooldown-duration'),
+    document.getElementById('restart-cooldown-duration')
+];
+countdownDurationInputs.forEach(input => {
+    input.addEventListener('input', () => {
+        if (input.value !== "" && Number(input.value) < 0) {
+            input.value = "0";
+        }
+    });
+    input.addEventListener('change', () => {
+        if (input.value === "") return;
+        const minimum = Number(input.min) || 0;
+        const maximum = Number(input.max);
+        const requestedValue = Number(input.value);
+        input.value = String(Math.min(
+            Number.isFinite(maximum) ? maximum : requestedValue,
+            Math.max(minimum, requestedValue)
+        ));
+    });
+});
+
 let poseLandmarker;
 let runningMode = "VIDEO";
 let lastVideoTime = -1;
 let cameraActive = false;
+let predictionLoopActive = false;
 
 // Jump Tracking State
 let jumpCount = 0;
 let isJumping = false;
 let jumpFrames = 0;
+let jumpTakeoffTime = 0;
+let jumpPeakDisplacement = 0;
+let lastConfirmedJumpTime = 0;
+let landingGroundedFrames = 0;
 let baselineY = null;
 let baselineTorsoHeight = null;
 let jumpStartTorso = 0;
@@ -1078,34 +1718,182 @@ let isCountdownActive = false;
 let isCountdownPaused = false;
 let currentCountdownValue = 0;
 let countdownDuration = 10;
+let cooldownDuration = 30;
+let cooldownEndsAt = null;
+let cooldownAdvancePending = false;
 let countInterval = null;
 let lostTrackingFrames = 0;
 let depthChangeFrames = 0;
 let currentStreak = 0;
 let streakTimeout = null;
+let streakSuspendedAt = null;
+let streakAnchor = null;
+let streakMovementFadeTimeout = null;
 let maxStreak = 0;
 let maxStreakDuration = 0;
 let currentStreakStartTime = null;
+let currentSetStreak = 0;
+let currentSetBestStreak = 0;
+let completedSetBestStreaks = [];
+let activeMonsterSet = 0;
+let activeMonster = null;
+let monstersKilledThisSession = 0;
+
+// Stable distance-normalized jump detector state
+let stableTrackerY = null;
+let stableBodyScale = null;
+let stableTrackingMode = null;
+let stableJumpPhase = "grounded";
+let stableTakeoffFrames = 0;
+let stableLandingFrames = 0;
+let stableJumpPeak = 0;
+let stableJumpStartedAt = 0;
 
 let totalSessionStartTime = null;
 let totalSessionPauseOffset = 0;
 let explicitPauseStartTime = null;
+let workoutCompletedAt = null;
 let isResting = false;
 let restStartTime = null;
 
+// Compact workout UI: five quick jumps hides everything except the counter and timer.
+const QUICK_JUMP_SEQUENCE_TARGET = 5;
+const QUICK_JUMP_MAX_GAP_MS = 1500;
+const COMPACT_UI_IDLE_MS = 5000;
+let quickJumpSequence = 0;
+let previousCountedJumpTime = 0;
+let compactUiReturnTimeout = null;
+
+function setCompactWorkoutUI(isCompact) {
+    document.getElementById('active-session-ui').classList.toggle('compact-workout-ui', isCompact);
+}
+
+function resetCompactWorkoutUI() {
+    if (compactUiReturnTimeout) {
+        clearTimeout(compactUiReturnTimeout);
+        compactUiReturnTimeout = null;
+    }
+    quickJumpSequence = 0;
+    previousCountedJumpTime = 0;
+    setCompactWorkoutUI(false);
+}
+
+function registerCountedJumpForCompactUI(countedAt) {
+    if (previousCountedJumpTime > 0 && countedAt - previousCountedJumpTime <= QUICK_JUMP_MAX_GAP_MS) {
+        quickJumpSequence++;
+    } else {
+        quickJumpSequence = 1;
+    }
+    previousCountedJumpTime = countedAt;
+
+    if (quickJumpSequence >= QUICK_JUMP_SEQUENCE_TARGET) {
+        setCompactWorkoutUI(true);
+    }
+
+    if (compactUiReturnTimeout) {
+        clearTimeout(compactUiReturnTimeout);
+    }
+    compactUiReturnTimeout = setTimeout(() => {
+        setCompactWorkoutUI(false);
+        quickJumpSequence = 0;
+        previousCountedJumpTime = 0;
+        compactUiReturnTimeout = null;
+    }, COMPACT_UI_IDLE_MS);
+}
+
 // Ice Block & Particle System State
-let iceState = 0; // 0 = normal green box, 1 = frozen ice block, 2 = cracked ice block
+const ICE_REFREEZE_IDLE_MS = 5000;
+let iceState = 0; // 0 = normal purple body box, 1 = frozen ice block, 2 = cracked ice block
 let iceBreakCount = 0;
+let iceShatteredAt = 0;
+let accumulatedFreezeTime = 0;
+let freezeStartedAtActiveTime = null;
 let iceParticles = [];
 let currentBoxX = 0;
 let currentBoxY = 0;
 let currentBoxW = 0;
 let currentBoxH = 0;
+let currentHeadCenterX = 0;
+let currentHeadTopY = 0;
+let currentHeadWidth = 0;
 let frozenBoxX = null;
 let frozenBoxY = null;
 let frozenBoxW = null;
 let frozenBoxH = null;
 let isLandingUncrouch = false;
+
+function getFrozenElapsedMs(atTime = Date.now()) {
+    if (iceState !== 1 || freezeStartedAtActiveTime === null) {
+        return accumulatedFreezeTime;
+    }
+
+    return accumulatedFreezeTime + Math.max(
+        0,
+        getActiveWorkoutElapsedMs(atTime) - freezeStartedAtActiveTime
+    );
+}
+
+function resetFreezeTracking() {
+    iceState = 0;
+    iceBreakCount = 0;
+    iceShatteredAt = 0;
+    accumulatedFreezeTime = 0;
+    freezeStartedAtActiveTime = null;
+    iceParticles = [];
+    frozenBoxX = null;
+    frozenBoxY = null;
+    frozenBoxW = null;
+    frozenBoxH = null;
+}
+
+function registerJumpAgainstIce(countedAt) {
+    if (iceState === 0) return;
+
+    iceBreakCount++;
+    if (iceBreakCount < 5) return;
+
+    accumulatedFreezeTime = getFrozenElapsedMs(countedAt);
+    freezeStartedAtActiveTime = null;
+    iceState = 0;
+    iceBreakCount = 0;
+    iceShatteredAt = countedAt;
+    spawnIceParticles(
+        frozenBoxX || currentBoxX,
+        frozenBoxY || currentBoxY,
+        frozenBoxW || currentBoxW,
+        frozenBoxH || currentBoxH
+    );
+    frozenBoxX = null;
+    frozenBoxY = null;
+    frozenBoxW = null;
+    frozenBoxH = null;
+}
+
+function refreezeIceAfterInactivity(now, isGrounded) {
+    if (!isGrounded) return;
+
+    // A recent jump, new session, or shatter starts a fresh inactivity window.
+    const inactivityStartedAt = Math.max(
+        lastJumpTime,
+        iceShatteredAt,
+        sessionStartTime || 0
+    );
+
+    if (inactivityStartedAt <= 0 || now - inactivityStartedAt < ICE_REFREEZE_IDLE_MS) {
+        return;
+    }
+
+    if (iceState === 0) {
+        // Refreeze after the block has been fully shattered.
+        iceState = 1;
+        iceBreakCount = 0;
+        iceShatteredAt = 0;
+        freezeStartedAtActiveTime = getActiveWorkoutElapsedMs(now);
+    } else if (iceState === 1 && iceBreakCount > 0) {
+        // Heal a partially cracked block after five seconds without another jump.
+        iceBreakCount = 0;
+    }
+}
 
 // Goal Mode State
 let goalMode = false;
@@ -1115,6 +1903,7 @@ let currentReps = 0;
 let currentSet = 1;
 let skipBreaks = false;
 let skipCountdown = false;
+let manualBreaks = false;
 
 // Goal Toggle Logic
 goalToggle.addEventListener('change', (e) => {
@@ -1152,6 +1941,55 @@ restartFlowToggle.addEventListener('change', (e) => {
         restartFlowInputs.classList.remove('show');
     }
 });
+
+const removePausesInput = document.getElementById('remove-pauses');
+const manualBreaksInput = document.getElementById('manual-breaks');
+const restartRemovePausesInput = document.getElementById('restart-remove-pauses');
+const restartManualBreaksInput = document.getElementById('restart-manual-breaks');
+
+manualBreaksInput.addEventListener('change', () => {
+    if (manualBreaksInput.checked) removePausesInput.checked = false;
+});
+removePausesInput.addEventListener('change', () => {
+    if (removePausesInput.checked) manualBreaksInput.checked = false;
+});
+restartManualBreaksInput.addEventListener('change', () => {
+    if (restartManualBreaksInput.checked) restartRemovePausesInput.checked = false;
+});
+restartRemovePausesInput.addEventListener('change', () => {
+    if (restartRemovePausesInput.checked) restartManualBreaksInput.checked = false;
+});
+
+const initialSkipBreaksOption = document.getElementById('initial-skip-breaks-option');
+const initialSkipCountdownOption = document.getElementById('initial-skip-countdown-option');
+const restartSkipBreaksOption = document.getElementById('restart-skip-breaks-option');
+const restartSkipCountdownOption = document.getElementById('restart-skip-countdown-option');
+const initialRemoveCountdownInput = document.getElementById('remove-countdown');
+const restartRemoveCountdownInput = document.getElementById('restart-remove-countdown');
+
+function updateSingleSetFlowOptions() {
+    const initialSingleSet = parseInt(targetSetsInput.value, 10) === 1;
+    initialSkipBreaksOption.style.display = initialSingleSet ? "none" : "flex";
+    initialSkipCountdownOption.style.display = initialSingleSet ? "none" : "flex";
+    if (initialSingleSet) {
+        removePausesInput.checked = false;
+        initialRemoveCountdownInput.checked = false;
+    }
+
+    const restartSingleSet = parseInt(restartTargetSetsInput.value, 10) === 1;
+    restartSkipBreaksOption.style.display = restartSingleSet ? "none" : "flex";
+    restartSkipCountdownOption.style.display = restartSingleSet ? "none" : "flex";
+    if (restartSingleSet) {
+        restartRemovePausesInput.checked = false;
+        restartRemoveCountdownInput.checked = false;
+    }
+}
+
+targetSetsInput.addEventListener('input', updateSingleSetFlowOptions);
+targetSetsInput.addEventListener('change', updateSingleSetFlowOptions);
+restartTargetSetsInput.addEventListener('input', updateSingleSetFlowOptions);
+restartTargetSetsInput.addEventListener('change', updateSingleSetFlowOptions);
+updateSingleSetFlowOptions();
 
 const POSE_CONNECTIONS = [
     // Stick figure
@@ -1222,20 +2060,52 @@ function startCountdownInterval() {
             }
             video.classList.remove("blur-background");
             canvas.classList.remove("blur-background");
+            startStreakGracePeriod();
         }
     }, 1000);
 }
 
+function isActiveWorkoutClockRunning() {
+    return Boolean(
+        sessionStartTime &&
+        !isPaused &&
+        !isOutOfFrame &&
+        !isResting &&
+        !isCountdownActive
+    );
+}
+
+function getActiveWorkoutElapsedMs(atTime = Date.now()) {
+    return accumulatedTime + (
+        isActiveWorkoutClockRunning()
+            ? Math.max(0, atTime - sessionStartTime)
+            : 0
+    );
+}
+
 function startSessionWithCountdown() {
+    // Total Time begins before the first countdown so all countdowns and set breaks are included.
+    if (!totalSessionStartTime) {
+        totalSessionStartTime = Date.now();
+    }
+
     isPaused = true;
     isCountdownActive = true;
     isCountdownPaused = false;
+    suspendStreakExpiry();
+    countdownDuration = Math.min(60, Math.max(5, Number(countdownDuration) || 5));
+    document.getElementById('countdown-duration').value = countdownDuration;
+    document.getElementById('restart-countdown-duration').value = countdownDuration;
     currentCountdownValue = countdownDuration;
     
     // Reset baseline state on countdown start so initial posture calibrates cleanly
     baselineY = null;
     baselineTorsoHeight = null;
     isJumping = false;
+    jumpTakeoffTime = 0;
+    jumpPeakDisplacement = 0;
+    isLandingUncrouch = false;
+    landingGroundedFrames = 0;
     lostTrackingFrames = 0;
     depthChangeFrames = 0;
     framesSinceLastJump = 0;
@@ -1243,6 +2113,7 @@ function startSessionWithCountdown() {
     const overlay = document.getElementById('countdown-overlay');
     const container = document.getElementById('countdown-container');
     const numEl = document.getElementById('countdown-number');
+
     overlay.style.display = "block";
     container.style.display = "flex";
     numEl.innerText = currentCountdownValue;
@@ -1255,6 +2126,8 @@ initializeModel();
 startBtn.addEventListener('click', async () => {
     // 1. Immediately fade out title screen controls to avoid frozen box state
     const titleScreenElems = [
+        document.getElementById('welcome-animation'),
+        document.getElementById('app-title'),
         document.getElementById('welcome-title'),
         goalSettings,
         startBtn,
@@ -1295,7 +2168,7 @@ startBtn.addEventListener('click', async () => {
         video.srcObject = stream;
         video.onloadeddata = () => {
             cameraActive = true;
-            predictWebcam();
+            startPredictionLoop();
         };
         try {
             await video.play();
@@ -1303,7 +2176,7 @@ startBtn.addEventListener('click', async () => {
             console.warn("Video play warning:", playErr);
         }
         cameraActive = true;
-        predictWebcam();
+        startPredictionLoop();
         
         // 2. Camera active! Hide camera loading box and transition smoothly into Active Workout UI
         if (cameraLoadingBox) {
@@ -1337,15 +2210,23 @@ startBtn.addEventListener('click', async () => {
         pauseBtn.style.background = "#ff9800";
         document.getElementById('add-goal-btn').style.display = goalToggle.checked ? "none" : "block";
         accumulatedTime = 0;
+        timerEl.innerText = "00:00";
         totalSessionStartTime = null;
         totalSessionPauseOffset = 0;
         explicitPauseStartTime = null;
+        workoutCompletedAt = null;
         isResting = false;
         
         // Read countdown duration input
         const cdInput = parseInt(document.getElementById('countdown-duration').value, 10);
-        if (!isNaN(cdInput) && cdInput > 0) {
-            countdownDuration = cdInput;
+        if (!isNaN(cdInput)) {
+            countdownDuration = Math.min(60, Math.max(5, cdInput));
+            document.getElementById('countdown-duration').value = countdownDuration;
+        }
+        const cooldownInput = parseInt(document.getElementById('cooldown-duration').value, 10);
+        if (!isNaN(cooldownInput)) {
+            cooldownDuration = Math.min(300, Math.max(0, cooldownInput));
+            document.getElementById('cooldown-duration').value = cooldownDuration;
         }
 
         // Goal Mode Initialization
@@ -1353,9 +2234,15 @@ startBtn.addEventListener('click', async () => {
         if (goalMode) {
             targetReps = parseInt(targetRepsInput.value, 10) || 0;
             targetSets = parseInt(targetSetsInput.value, 10) || 0;
+            updateSingleSetFlowOptions();
             const flowEnabled = document.getElementById('flow-toggle').checked;
             skipBreaks = flowEnabled && document.getElementById('remove-pauses').checked;
             skipCountdown = flowEnabled && document.getElementById('remove-countdown').checked;
+            manualBreaks = flowEnabled && document.getElementById('manual-breaks').checked;
+            if (targetSets === 1) {
+                skipBreaks = false;
+                skipCountdown = false;
+            }
             if (targetReps <= 0 || targetSets <= 0) {
                 goalMode = false;
             }
@@ -1369,36 +2256,41 @@ startBtn.addEventListener('click', async () => {
         framesSinceLastJump = 0;
         lastXPositions = [];
         currentStreak = 0;
+        streakSuspendedAt = null;
         maxStreak = 0;
         maxStreakDuration = 0;
         currentStreakStartTime = null;
+        currentSetStreak = 0;
+        currentSetBestStreak = 0;
+        completedSetBestStreaks = [];
+        monstersKilledThisSession = 0;
+        lastConfirmedJumpTime = 0;
+        landingGroundedFrames = 0;
+        jumpPeakDisplacement = 0;
         if (streakTimeout) clearTimeout(streakTimeout);
-        document.getElementById('streak-counter').style.display = "none";
+        clearStreakBursts();
+        resetCompactWorkoutUI();
+        resetFreezeTracking();
         
         if (goalMode) {
             setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
             setProgressEl.style.display = "block";
             const displayTotal = skipBreaks ? (targetReps * targetSets) : targetReps;
             jumpCountEl.innerText = `${currentReps} / ${displayTotal}`;
+            initializeMonsterChallenge(currentSet, 0);
         } else {
             setProgressEl.style.display = "none";
             jumpCountEl.innerText = jumpCount;
+            hideMonsterChallenge();
         }
         
         goalSettings.style.display = "none";
         timerInterval = setInterval(() => {
-            if (!isPaused && !isOutOfFrame) {
-                const elapsed = Math.floor((accumulatedTime + (Date.now() - sessionStartTime)) / 1000);
-                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-                const secs = String(elapsed % 60).padStart(2, '0');
-                timerEl.innerText = `${mins}:${secs}`;
-            }
-            if (isResting && restStartTime) {
-                const restElapsed = Math.floor((Date.now() - restStartTime) / 1000);
-                const rMins = String(Math.floor(restElapsed / 60)).padStart(2, '0');
-                const rSecs = String(restElapsed % 60).padStart(2, '0');
-                document.getElementById('rest-timer').innerText = `${rMins}:${rSecs}`;
-            }
+            const elapsed = Math.floor(getActiveWorkoutElapsedMs() / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            timerEl.innerText = `${mins}:${secs}`;
+            updateRestTimerDisplay();
         }, 1000);
         
         startSessionWithCountdown();
@@ -1419,8 +2311,287 @@ function resizeCanvas() {
     }
 }
 
+function calculateStreakAnchor(streakSide) {
+    const rect = canvas.getBoundingClientRect();
+    const layerRect = streakLayer.getBoundingClientRect();
+    const scale = Math.max(rect.width / canvas.width, rect.height / canvas.height);
+    const renderedWidth = canvas.width * scale;
+    const renderedHeight = canvas.height * scale;
+    const offsetX = (rect.width - renderedWidth) / 2;
+    const offsetY = (rect.height - renderedHeight) / 2;
+    const headCenterX = currentHeadWidth ? currentHeadCenterX : currentBoxX + currentBoxW / 2;
+    const headTopY = currentHeadWidth ? currentHeadTopY : currentBoxY;
+    const headWidth = currentHeadWidth || currentBoxW * 0.38;
+
+    // The camera is mirrored with CSS, so the raw head's right edge is visually on the left.
+    const headLeft = rect.left + rect.width - (offsetX + (headCenterX + headWidth / 2) * scale);
+    const headRight = rect.left + rect.width - (offsetX + (headCenterX - headWidth / 2) * scale);
+    const headTop = rect.top + offsetY + headTopY * scale;
+    const gap = Math.max(16, Math.min(34, rect.width * 0.02));
+
+    return {
+        side: streakSide,
+        x: (streakSide === "left" ? headLeft - gap : headRight + gap) - layerRect.left,
+        y: Math.max(76, headTop - layerRect.top + 12),
+        headX: ((headLeft + headRight) / 2) - layerRect.left,
+        headY: headTop - layerRect.top,
+        horizontalMoveThreshold: Math.max(70, headWidth * scale * 0.75),
+        verticalMoveThreshold: Math.max(100, headWidth * scale)
+    };
+}
+
+function positionStreakCounter(streakEl) {
+    if (!streakEl || !streakAnchor) return;
+    streakEl.style.left = `${streakAnchor.x}px`;
+    streakEl.style.top = `${streakAnchor.y}px`;
+}
+
+function clearStreakBursts() {
+    streakLayer.replaceChildren();
+    streakLayer.classList.remove("fading");
+    streakAnchor = null;
+    if (streakMovementFadeTimeout) {
+        clearTimeout(streakMovementFadeTimeout);
+        streakMovementFadeTimeout = null;
+    }
+}
+
+function pauseStreakExpiry() {
+    if (streakTimeout) {
+        clearTimeout(streakTimeout);
+        streakTimeout = null;
+    }
+}
+
+function suspendStreakExpiry() {
+    pauseStreakExpiry();
+    if (currentStreak > 0 && streakSuspendedAt === null) {
+        streakSuspendedAt = Date.now();
+    }
+}
+
+function expireCurrentStreak() {
+    streakTimeout = null;
+    streakSuspendedAt = null;
+    currentStreak = 0;
+    currentSetStreak = 0;
+    streakLayer.classList.add("fading");
+    setTimeout(() => {
+        if (currentStreak === 0) {
+            clearStreakBursts();
+        }
+    }, 720);
+}
+
+function startStreakGracePeriod() {
+    pauseStreakExpiry();
+    if (streakSuspendedAt !== null && currentStreakStartTime !== null) {
+        currentStreakStartTime += Date.now() - streakSuspendedAt;
+    }
+    streakSuspendedAt = null;
+    if (currentStreak > 0) {
+        streakTimeout = setTimeout(expireCurrentStreak, 5000);
+    }
+}
+
+function resetStreakAnchorAfterMovement() {
+    if (!streakAnchor || streakLayer.classList.contains("fading")) return;
+
+    const currentPosition = calculateStreakAnchor(streakAnchor.side);
+    const movedHorizontally =
+        Math.abs(currentPosition.headX - streakAnchor.headX) > streakAnchor.horizontalMoveThreshold;
+    const movedVertically =
+        Math.abs(currentPosition.headY - streakAnchor.headY) > streakAnchor.verticalMoveThreshold;
+
+    if (!movedHorizontally && !movedVertically) return;
+
+    // Leave the existing numbers at their original screen position while they fade.
+    streakAnchor = null;
+    streakLayer.classList.add("fading");
+    streakMovementFadeTimeout = setTimeout(() => {
+        if (!streakAnchor) {
+            clearStreakBursts();
+        }
+    }, 720);
+}
+
+function showStreakBurst(streakCount) {
+    if (streakLayer.classList.contains("fading")) {
+        clearStreakBursts();
+    }
+
+    const streakEl = document.createElement("div");
+    const streakSide = streakAnchor?.side || (Math.random() < 0.5 ? "left" : "right");
+
+    if (!streakAnchor) {
+        streakAnchor = calculateStreakAnchor(streakSide);
+    }
+
+    streakLayer.querySelectorAll(".streak-text").forEach(previousEl => {
+        previousEl.classList.add("trailing");
+        setTimeout(() => previousEl.remove(), 1000);
+    });
+
+    streakEl.className = `streak-text side-${streakSide}`;
+    streakEl.style.setProperty("--streak-tilt", `${-3 + Math.random() * 6}deg`);
+    streakEl.innerText = streakCount.toLocaleString();
+    streakLayer.appendChild(streakEl);
+
+    const edgePadding = 16;
+    const layerWidth = streakLayer.clientWidth;
+    if (streakSide === "left") {
+        streakAnchor.x = Math.min(
+            layerWidth - edgePadding,
+            Math.max(edgePadding + streakEl.offsetWidth, streakAnchor.x)
+        );
+    } else {
+        streakAnchor.x = Math.max(
+            edgePadding,
+            Math.min(layerWidth - edgePadding - streakEl.offsetWidth, streakAnchor.x)
+        );
+    }
+    streakLayer.querySelectorAll(".streak-text").forEach(positionStreakCounter);
+
+    const visibleBursts = streakLayer.querySelectorAll(".streak-text");
+    if (visibleBursts.length > 4) {
+        visibleBursts[0].remove();
+    }
+}
+
+const MONSTER_ROSTER = [
+    { name: "Potato Chip Bag", type: "chip-bag" },
+    { name: "Sugary Soda", type: "emoji", emoji: "🥤" },
+    { name: "Donut Beast", type: "emoji", emoji: "🍩" },
+    { name: "Burger Brute", type: "emoji", emoji: "🍔" },
+    { name: "Candy Crusher", type: "emoji", emoji: "🍬" }
+];
+
+function renderMonsterArt(monster) {
+    if (monster.type !== "chip-bag") {
+        monsterArtEl.innerHTML = `<div class="monster-emoji">${monster.emoji}</div>`;
+        return;
+    }
+
+    monsterArtEl.innerHTML = `
+        <svg viewBox="0 0 120 135" role="img" aria-label="Angry potato chip bag monster">
+            <defs>
+                <linearGradient id="chipBagBody" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#ffeb3b"/>
+                    <stop offset="0.55" stop-color="#ffb300"/>
+                    <stop offset="1" stop-color="#f57c00"/>
+                </linearGradient>
+                <linearGradient id="chipBagBand" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stop-color="#d50000"/>
+                    <stop offset="0.5" stop-color="#ff1744"/>
+                    <stop offset="1" stop-color="#b71c1c"/>
+                </linearGradient>
+            </defs>
+            <path d="M25 8 L96 11 L101 121 L88 128 L72 124 L58 130 L43 124 L27 129 L18 119 Z"
+                  fill="url(#chipBagBody)" stroke="#7f3d00" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M24 10 L95 13 M20 118 L99 119" fill="none" stroke="#fff8b5" stroke-width="6"
+                  stroke-dasharray="7 3"/>
+            <path d="M20 37 L98 39 L97 62 L21 60 Z" fill="url(#chipBagBand)" opacity="0.96"/>
+            <text x="59" y="54" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="900"
+                  font-family="Arial, sans-serif" transform="rotate(1 59 50)">CHIPS</text>
+            <ellipse cx="48" cy="81" rx="10" ry="8" fill="#fff7cf" stroke="#6d4c41" stroke-width="2"/>
+            <ellipse cx="75" cy="81" rx="10" ry="8" fill="#fff7cf" stroke="#6d4c41" stroke-width="2"/>
+            <circle cx="50" cy="82" r="4" fill="#321b12"/>
+            <circle cx="73" cy="82" r="4" fill="#321b12"/>
+            <path d="M37 70 L55 76 M84 70 L67 76" fill="none" stroke="#5d2200" stroke-width="5"
+                  stroke-linecap="round"/>
+            <path d="M43 105 Q61 88 80 105 Q61 98 43 105 Z" fill="#501000" stroke="#321000" stroke-width="2"/>
+            <path d="M48 102 L53 97 L58 101 L63 96 L69 101 L74 98" fill="none" stroke="#ffffff"
+                  stroke-width="3" stroke-linejoin="round"/>
+            <ellipse cx="35" cy="31" rx="13" ry="7" fill="#ffe082" stroke="#8d5d00" stroke-width="2"
+                     transform="rotate(-18 35 31)"/>
+            <ellipse cx="78" cy="27" rx="12" ry="7" fill="#ffe082" stroke="#8d5d00" stroke-width="2"
+                     transform="rotate(17 78 27)"/>
+        </svg>`;
+}
+
+function hideMonsterChallenge() {
+    monsterChallengeEl.style.display = "none";
+    monsterChallengeEl.classList.remove("defeated");
+    activeMonsterSet = 0;
+    activeMonster = null;
+}
+
+function initializeMonsterChallenge(setNumber, repsCompleted = 0) {
+    if (!goalMode || targetReps <= 0 || setNumber > targetSets) {
+        hideMonsterChallenge();
+        return;
+    }
+
+    activeMonsterSet = setNumber;
+    activeMonster = MONSTER_ROSTER[(setNumber - 1) % MONSTER_ROSTER.length];
+    const monsterLevel = Math.floor((setNumber - 1) / MONSTER_ROSTER.length) + 1;
+    const remainingHp = Math.max(0, targetReps - Math.min(repsCompleted, targetReps));
+    const healthPercent = targetReps > 0 ? (remainingHp / targetReps) * 100 : 0;
+
+    monsterChallengeEl.style.display = "block";
+    monsterSetLabelEl.innerText = `SET ${setNumber} MONSTER`;
+    monsterNameEl.innerText = monsterLevel > 1
+        ? `${activeMonster.name} · LV ${monsterLevel}`
+        : activeMonster.name;
+    monsterArtEl.className = "monster-art";
+    renderMonsterArt(activeMonster);
+    updateMonsterHealthDisplay(remainingHp, healthPercent);
+}
+
+function updateMonsterHealthDisplay(remainingHp, healthPercent) {
+    monsterHpTextEl.innerText = `${remainingHp} / ${targetReps} HP`;
+    monsterHealthFillEl.style.width = `${Math.max(0, healthPercent)}%`;
+    monsterHealthFillEl.classList.toggle("warning", healthPercent > 25 && healthPercent <= 55);
+    monsterHealthFillEl.classList.toggle("critical", healthPercent <= 25);
+}
+
+function damageMonsterForCurrentJump() {
+    if (!goalMode || targetReps <= 0) return;
+
+    const repsDoneThisSet = skipBreaks
+        ? ((currentReps - 1) % targetReps) + 1
+        : Math.min(currentReps, targetReps);
+
+    if (activeMonsterSet !== currentSet || !activeMonster) {
+        initializeMonsterChallenge(currentSet, Math.max(0, repsDoneThisSet - 1));
+    }
+
+    const remainingHp = Math.max(0, targetReps - repsDoneThisSet);
+    const healthPercent = (remainingHp / targetReps) * 100;
+    updateMonsterHealthDisplay(remainingHp, healthPercent);
+
+    monsterArtEl.classList.remove("hit");
+    void monsterArtEl.offsetWidth;
+    monsterArtEl.classList.add("hit");
+
+    const damageEl = document.createElement("span");
+    damageEl.className = "monster-damage";
+    damageEl.innerText = "-1";
+    monsterArtEl.appendChild(damageEl);
+    setTimeout(() => damageEl.remove(), 600);
+
+    if (remainingHp === 0 && !monsterArtEl.classList.contains("defeated")) {
+        monstersKilledThisSession++;
+        monsterArtEl.classList.remove("hit");
+        monsterArtEl.classList.add("defeated");
+        const defeatedLabel = document.createElement("div");
+        defeatedLabel.className = "monster-defeated-label";
+        defeatedLabel.innerText = "DEFEATED!";
+        monsterArtEl.appendChild(defeatedLabel);
+    }
+}
+
+function startPredictionLoop() {
+    if (predictionLoopActive) return;
+    predictionLoopActive = true;
+    predictWebcam();
+}
+
 function predictWebcam() {
-    if (!cameraActive) return;
+    if (!cameraActive) {
+        predictionLoopActive = false;
+        return;
+    }
     
     // Safely wait for MediaPipe model initialization if not ready yet
     if (!poseLandmarker) {
@@ -1444,19 +2615,36 @@ function predictWebcam() {
             if (result.landmarks && result.landmarks.length > 0) {
                 const landmarks = result.landmarks[0];
                 drawWireframe(landmarks, canvas.width, canvas.height);
-                processJumpLogic(landmarks);
+                processStableJumpLogic(landmarks);
             } else {
                 baselineY = null;
                 baselineTorsoHeight = null;
                 isJumping = false;
+                jumpTakeoffTime = 0;
+                lostTrackingFrames++;
+                
+                // Show OUT OF FRAME only after sustained pose loss, not a single skipped frame.
+                const isConfigActive = (
+                    document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
+                    document.getElementById('history-panel')?.style.display === "flex" ||
+                    document.getElementById('history-detail-panel')?.style.display === "flex" ||
+                    document.getElementById('stats-panel')?.style.display === "flex"
+                );
+                if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
+                    isOutOfFrame = true;
+                    boundsWarning.classList.add("show");
+                    if (!isPaused) {
+                        accumulatedTime += Date.now() - sessionStartTime;
+                    }
+                }
             }
         });
     } catch (detectErr) {
         console.warn("Pose detection frame skipped:", detectErr);
     }
     
-    // Use setTimeout instead of requestAnimationFrame so tracking doesn't stall when the window loses focus
-    setTimeout(predictWebcam, 33);
+    // Sample at roughly 42 FPS so short, quick rope hops still produce enough pose frames.
+    setTimeout(predictWebcam, 24);
 }
 
 function spawnIceParticles(x, y, bw, bh) {
@@ -1519,24 +2707,45 @@ function drawWireframe(landmarks, w, h) {
     // 1. Draw Bounding Box around on-screen body parts (guaranteeing hips are included)
     const leftHip = landmarks[23];
     const rightHip = landmarks[24];
-    const hipsVisible = leftHip && rightHip && 
+    const minTrackingVisibility = 0.15;
+    const hipsVisible = leftHip && rightHip &&
+                        leftHip.visibility >= minTrackingVisibility && rightHip.visibility >= minTrackingVisibility &&
                         leftHip.x >= 0 && leftHip.x <= 1 && leftHip.y >= 0 && leftHip.y <= 1 &&
                         rightHip.x >= 0 && rightHip.x <= 1 && rightHip.y >= 0 && rightHip.y <= 1;
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const shouldersInFrame = leftShoulder && rightShoulder &&
+                             Number.isFinite(leftShoulder.x) && Number.isFinite(leftShoulder.y) &&
+                             Number.isFinite(rightShoulder.x) && Number.isFinite(rightShoulder.y) &&
+                             leftShoulder.x >= 0 && leftShoulder.x <= 1 && leftShoulder.y >= 0 && leftShoulder.y <= 1 &&
+                             rightShoulder.x >= 0 && rightShoulder.x <= 1 && rightShoulder.y >= 0 && rightShoulder.y <= 1;
 
-    const keyLms = [leftHip, rightHip, ...boxLms].filter(lm => lm);
+    const lowerBodyLms = [23, 24, 25, 26, 27, 28]
+        .map(index => landmarks[index])
+        .filter(lm => lm && lm.x >= 0 && lm.x <= 1 && lm.y >= 0 && lm.y <= 1);
+    const keyLms = boxLms;
     const xCoords = keyLms.map(lm => lm.x * w);
     const yCoords = keyLms.map(lm => lm.y * h);
     const padding = 20;
     
-    const rawXMin = Math.min(...xCoords) - padding;
-    const rawXMax = Math.max(...xCoords) + padding;
-    const rawYMin = Math.min(...yCoords) - padding;
-    const rawYMax = Math.max(...yCoords) + padding;
+    let rawXMin = Math.min(...xCoords) - padding;
+    let rawXMax = Math.max(...xCoords) + padding;
+    let rawYMin = Math.min(...yCoords) - padding;
+    let rawYMax = Math.max(...yCoords) + padding;
 
-    let currentOutOfFrame = false;
-    if (!hipsVisible || rawXMin < 0 || rawXMax > w || rawYMin < 0 || rawYMax > h) {
-        currentOutOfFrame = true;
+    if (lowerBodyLms.length < 2 && shouldersInFrame) {
+        // Give close-up mode a stable virtual torso instead of drawing a tiny head-only box.
+        const shoulderCenterY = ((leftShoulder.y + rightShoulder.y) / 2) * h;
+        const shoulderSpan = Math.abs(leftShoulder.x - rightShoulder.x) * w;
+        const nose = landmarks[0];
+        const headToShoulders = nose ? Math.abs(((leftShoulder.y + rightShoulder.y) / 2) - nose.y) * h : 0;
+        const virtualTorsoDepth = Math.max(shoulderSpan * 0.9, headToShoulders * 2.5, h * 0.12);
+        rawYMax = Math.max(rawYMax, shoulderCenterY + virtualTorsoDepth);
     }
+
+    // Reaching this renderer means MediaPipe found a pose. The jump detector independently
+    // verifies its tracking anchors, so a rendered person must never remain blocked as out of frame.
+    const currentOutOfFrame = false;
 
     const isConfigActive = (
         document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
@@ -1570,12 +2779,33 @@ function drawWireframe(landmarks, w, h) {
     currentBoxY = yMin;
     currentBoxW = bw;
     currentBoxH = bh;
+
+    const visibleHeadLms = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        .map(index => landmarks[index])
+        .filter(lm => lm && Number.isFinite(lm.x) && Number.isFinite(lm.y) &&
+                      lm.x >= 0 && lm.x <= 1 && lm.y >= 0 && lm.y <= 1);
+    if (visibleHeadLms.length > 0) {
+        const headXs = visibleHeadLms.map(lm => lm.x * w);
+        currentHeadCenterX = (Math.min(...headXs) + Math.max(...headXs)) / 2;
+        currentHeadTopY = Math.min(...visibleHeadLms.map(lm => lm.y * h));
+        const detectedHeadWidth = Math.max(...headXs) - Math.min(...headXs);
+        const shoulderWidth = shouldersInFrame ? Math.abs(leftShoulder.x - rightShoulder.x) * w : 0;
+        currentHeadWidth = Math.max(detectedHeadWidth, shoulderWidth * 0.42, 42);
+    } else {
+        currentHeadCenterX = xMin + bw / 2;
+        currentHeadTopY = yMin;
+        currentHeadWidth = Math.max(42, bw * 0.38);
+    }
+    resetStreakAnchorAfterMovement();
     
     if (iceState === 0) {
-        // Standard Neon Green Bounding Box
-        ctx.strokeStyle = "#00ff00";
+        // Purple full-body tracking box
+        ctx.strokeStyle = "#b026ff";
         ctx.lineWidth = 3;
+        ctx.shadowColor = "#b026ff";
+        ctx.shadowBlur = 8;
         ctx.strokeRect(xMin, yMin, bw, bh);
+        ctx.shadowBlur = 0;
         frozenBoxX = null;
         frozenBoxY = null;
         frozenBoxW = null;
@@ -1660,6 +2890,43 @@ function drawWireframe(landmarks, w, h) {
         ctx.restore();
     }
 
+    // Green perspective ground guide, positioned beneath the tracked feet.
+    const visibleFootLms = [27, 28, 29, 30, 31, 32]
+        .map(index => landmarks[index])
+        .filter(lm => lm && Number.isFinite(lm.x) && Number.isFinite(lm.y) &&
+                      lm.x >= 0 && lm.x <= 1 && lm.y >= 0 && lm.y <= 1);
+    const detectedGroundY = visibleFootLms.length > 0
+        ? Math.max(...visibleFootLms.map(lm => lm.y * h))
+        : yMax;
+    // Keep the guide a fixed size for the current camera view. Only its position
+    // follows the feet, so spreading the arms cannot resize or shift the zone.
+    const groundDepth = Math.max(28, Math.min(60, h * 0.09));
+    const groundWidth = Math.max(160, Math.min(360, w * 0.32));
+    const groundCenterX = visibleFootLms.length > 0
+        ? visibleFootLms.reduce((sum, lm) => sum + lm.x * w, 0) / visibleFootLms.length
+        : xMin + bw / 2;
+    const groundTopY = Math.min(h - groundDepth - 4, Math.max(4, detectedGroundY + 6));
+    const groundBottomY = groundTopY + groundDepth;
+    const groundBottomLeft = Math.max(4, groundCenterX - groundWidth / 2);
+    const groundBottomRight = Math.min(w - 4, groundCenterX + groundWidth / 2);
+    const groundInset = (groundBottomRight - groundBottomLeft) * 0.13;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(groundBottomLeft + groundInset, groundTopY);
+    ctx.lineTo(groundBottomRight - groundInset, groundTopY);
+    ctx.lineTo(groundBottomRight, groundBottomY);
+    ctx.lineTo(groundBottomLeft, groundBottomY);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(0, 255, 0, 0.08)";
+    ctx.fill();
+    ctx.strokeStyle = "#00ff00";
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "#00ff00";
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.restore();
+
     // Render active ice shatter particles
     updateAndDrawIceParticles(ctx);
     
@@ -1691,8 +2958,146 @@ function drawWireframe(landmarks, w, h) {
     }
 }
 
+function processStableJumpLogic(landmarks) {
+    if (isOutOfFrame) return;
+
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+    const nose = landmarks[0];
+
+    const isOnScreen = (point) => point &&
+        Number.isFinite(point.x) && Number.isFinite(point.y) &&
+        point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1;
+
+    if (!isOnScreen(leftShoulder) || !isOnScreen(rightShoulder)) {
+        lostTrackingFrames++;
+        if (lostTrackingFrames > 10) {
+            baselineY = null;
+            stableTrackerY = null;
+            stableBodyScale = null;
+            stableTrackingMode = null;
+            stableJumpPhase = "grounded";
+        }
+        return;
+    }
+    lostTrackingFrames = 0;
+
+    const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+    const shouldersWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+    const hipsTrackable = isOnScreen(leftHip) && isOnScreen(rightHip);
+    const trackingMode = hipsTrackable ? "hips" : "upper-body";
+
+    let rawTrackerY;
+    let rawBodyScale;
+    if (hipsTrackable) {
+        const hipY = (leftHip.y + rightHip.y) / 2;
+        rawTrackerY = hipY;
+        rawBodyScale = Math.max(Math.abs(hipY - shoulderY), 0.04);
+    } else {
+        rawTrackerY = shoulderY;
+        const headToShoulders = isOnScreen(nose) ? Math.abs(shoulderY - nose.y) * 2 : 0;
+        rawBodyScale = Math.max(headToShoulders, shouldersWidth, 0.06);
+    }
+
+    // Changing between hip and upper-body tracking can look like a jump. Recalibrate instead.
+    if (stableTrackingMode !== trackingMode || stableTrackerY === null || stableBodyScale === null || baselineY === null) {
+        stableTrackingMode = trackingMode;
+        stableTrackerY = rawTrackerY;
+        stableBodyScale = rawBodyScale;
+        baselineY = rawTrackerY;
+        baselineTorsoHeight = rawBodyScale;
+        stableJumpPhase = "grounded";
+        stableTakeoffFrames = 0;
+        stableLandingFrames = 0;
+        stableJumpPeak = 0;
+        stableJumpStartedAt = 0;
+        return;
+    }
+
+    // Smooth landmark jitter while retaining enough response for fast rope cadence.
+    stableTrackerY = stableTrackerY * 0.55 + rawTrackerY * 0.45;
+    stableBodyScale = stableBodyScale * 0.80 + rawBodyScale * 0.20;
+    baselineTorsoHeight = stableBodyScale;
+
+    if (isPaused || isCountdownActive) {
+        baselineY = baselineY * 0.88 + stableTrackerY * 0.12;
+        stableJumpPhase = "grounded";
+        stableTakeoffFrames = 0;
+        stableLandingFrames = 0;
+        stableJumpPeak = 0;
+        stableJumpStartedAt = 0;
+        return;
+    }
+
+    const now = Date.now();
+    const heightUnits = (baselineY - stableTrackerY) / Math.max(stableBodyScale, 0.04);
+    // Count low, rope-style hops (roughly 1–3 inches) without requiring a high jump.
+    // Two takeoff frames plus a confirmed landing still protect against pose jitter.
+    const takeoffThreshold = trackingMode === "hips" ? 0.045 : 0.06;
+    const strongTakeoffThreshold = takeoffThreshold * 1.30;
+    // A wider landing window lets rapid low hops close before the next takeoff begins.
+    const landingThreshold = takeoffThreshold * 0.70;
+
+    if (stableJumpPhase === "grounded") {
+        // Adapt only while close to the standing baseline; never chase a body upward.
+        if (Math.abs(heightUnits) < takeoffThreshold * 0.55) {
+            baselineY = baselineY * 0.985 + stableTrackerY * 0.015;
+        }
+
+        if (heightUnits >= takeoffThreshold) {
+            stableTakeoffFrames++;
+        } else {
+            stableTakeoffFrames = 0;
+        }
+
+        // Two ordinary takeoff frames, or one unmistakably strong frame, starts a jump.
+        if (stableTakeoffFrames >= 2 || heightUnits >= strongTakeoffThreshold) {
+            stableJumpPhase = "airborne";
+            stableJumpStartedAt = now;
+            stableJumpPeak = heightUnits;
+            stableLandingFrames = 0;
+            stableTakeoffFrames = 0;
+        }
+    } else {
+        stableJumpPeak = Math.max(stableJumpPeak, heightUnits);
+
+        if (heightUnits <= landingThreshold) {
+            stableLandingFrames++;
+        } else {
+            stableLandingFrames = 0;
+        }
+
+        // Require a clear return to baseline. This closes one jump cycle exactly once.
+        const strongLanding = heightUnits <= 0;
+        if (stableLandingFrames >= 2 || strongLanding) {
+            const airborneMs = now - stableJumpStartedAt;
+            const hasValidShape = airborneMs >= 35 && stableJumpPeak >= takeoffThreshold * 1.02;
+            const outsideCountDebounce = lastConfirmedJumpTime === 0 || now - lastConfirmedJumpTime >= 170;
+
+            if (hasValidShape && outsideCountDebounce) {
+                jumpCount++;
+                updateUI();
+                lastConfirmedJumpTime = now;
+                lastJumpTime = now;
+                registerCountedJumpForCompactUI(now);
+                registerJumpAgainstIce(now);
+            }
+
+            stableJumpPhase = "grounded";
+            stableLandingFrames = 0;
+            stableTakeoffFrames = 0;
+            stableJumpPeak = 0;
+            stableJumpStartedAt = 0;
+        }
+    }
+
+    refreezeIceAfterInactivity(now, stableJumpPhase === "grounded");
+}
+
 function processJumpLogic(landmarks) {
-    // Lock jump counting whenever out of frame or hips are missing
+    // Lock jump counting only when the active full-body or upper-body tracking anchor is out of frame.
     if (isOutOfFrame) {
         return;
     }
@@ -1703,15 +3108,22 @@ function processJumpLogic(landmarks) {
     const rightShoulderLM = landmarks[12];
     const noseLM = landmarks[0];
 
-    const minVis = 0.30; // Lowered to be more forgiving in harsh lighting or when standing further away
+    const minVis = 0.10; // Used to select hips/nose tracking mode, not to reject an otherwise on-screen person
     
-    // Check if shoulders are visible (minimum requirement for tracking)
-    if (!leftShoulderLM || !rightShoulderLM || leftShoulderLM.visibility < minVis || rightShoulderLM.visibility < minVis) {
+    // On-screen shoulder coordinates are the minimum requirement. Visibility confidence can be low
+    // even while MediaPipe is drawing a stable, accurate full-body skeleton.
+    const shouldersTrackable = leftShoulderLM && rightShoulderLM &&
+                               Number.isFinite(leftShoulderLM.x) && Number.isFinite(leftShoulderLM.y) &&
+                               Number.isFinite(rightShoulderLM.x) && Number.isFinite(rightShoulderLM.y) &&
+                               leftShoulderLM.x >= 0 && leftShoulderLM.x <= 1 && leftShoulderLM.y >= 0 && leftShoulderLM.y <= 1 &&
+                               rightShoulderLM.x >= 0 && rightShoulderLM.x <= 1 && rightShoulderLM.y >= 0 && rightShoulderLM.y <= 1;
+    if (!shouldersTrackable) {
         lostTrackingFrames++;
         if (lostTrackingFrames > 10) { // Require ~300ms of lost tracking before resetting completely
             baselineY = null;
             baselineTorsoHeight = null;
             isJumping = false;
+            jumpTakeoffTime = 0;
         }
         return;
     }
@@ -1720,7 +3132,10 @@ function processJumpLogic(landmarks) {
     let trackerY;
     let referenceHeight;
 
-    const hipsVisible = leftHipLM && rightHipLM && leftHipLM.visibility >= minVis && rightHipLM.visibility >= minVis;
+    const hipsVisible = leftHipLM && rightHipLM &&
+                        leftHipLM.visibility >= minVis && rightHipLM.visibility >= minVis &&
+                        leftHipLM.x >= 0 && leftHipLM.x <= 1 && leftHipLM.y >= 0 && leftHipLM.y <= 1 &&
+                        rightHipLM.x >= 0 && rightHipLM.x <= 1 && rightHipLM.y >= 0 && rightHipLM.y <= 1;
 
     if (hipsVisible) {
         // Standard tracking (full body): Use the center of the torso as the tracking point
@@ -1754,6 +3169,7 @@ function processJumpLogic(landmarks) {
             baselineTorsoHeight = baselineTorsoHeight * 0.90 + referenceHeight * 0.10;
         }
         isJumping = false;
+        jumpTakeoffTime = 0;
         depthChangeFrames = 0;
         framesSinceLastJump = 0;
         return;
@@ -1780,6 +3196,7 @@ function processJumpLogic(landmarks) {
         baselineY = trackerY;
         baselineTorsoHeight = referenceHeight;
         isJumping = false;
+        jumpTakeoffTime = 0;
         depthChangeFrames = 0;
         framesSinceLastJump = 0;
         return;
@@ -1788,12 +3205,14 @@ function processJumpLogic(landmarks) {
     // Auto-calibration: instantly recalibrate baseline and size scale if distance changes (moving forward/backward).
     // Running this before jump logic breaks any deadlock when walking closer to the camera.
     const torsoDiff = Math.abs(referenceHeight - baselineTorsoHeight);
-    if (torsoDiff / baselineTorsoHeight > 0.18 && torsoDiff > 0.005) {
+    const depthChangeTolerance = hipsVisible ? 0.22 : 0.35;
+    if (torsoDiff / baselineTorsoHeight > depthChangeTolerance && torsoDiff > 0.005) {
         depthChangeFrames++;
         if (depthChangeFrames > 5) { // Require ~150ms of sustained distance change to recalibrate
             baselineY = trackerY;
             baselineTorsoHeight = referenceHeight;
             isJumping = false;
+            jumpTakeoffTime = 0;
             depthChangeFrames = 0;
             framesSinceLastJump = 0;
             return;
@@ -1802,35 +3221,76 @@ function processJumpLogic(landmarks) {
         depthChangeFrames = 0;
     }
 
-    const jumpThreshold = Math.max(referenceHeight * 0.10, 0.012);
+    // Preserve the proven far-distance sensitivity while reducing and capping the threshold
+    // as the jumper fills more of the frame. Fallback tracking is intentionally more sensitive.
+    let jumpThresholdScale;
+    if (!hipsVisible) {
+        jumpThresholdScale = 0.055;
+    } else if (referenceHeight > 0.42) {
+        jumpThresholdScale = 0.065;
+    } else if (referenceHeight > 0.28) {
+        jumpThresholdScale = 0.08;
+    } else {
+        jumpThresholdScale = 0.10;
+    }
+    const jumpThreshold = Math.min(Math.max(referenceHeight * jumpThresholdScale, 0.010), 0.028);
     const now = Date.now();
 
-    // Distance-aware refractory period: 220ms when standing 10+ feet away (referenceHeight <= 0.28), 160ms when close
-    const minRefractory = referenceHeight <= 0.28 ? 220 : 160;
+    // Distance-aware refractory period. Medium framing needs the longest guard because
+    // landing/uncrouch motion is large enough to resemble an immediate second takeoff.
+    let minRefractory;
+    if (!hipsVisible) {
+        minRefractory = 220;
+    } else if (referenceHeight <= 0.28) {
+        minRefractory = 220;
+    } else if (referenceHeight <= 0.42) {
+        minRefractory = 270;
+    } else {
+        minRefractory = 200;
+    }
     
-    // Takeoff threshold guard: within 10 frames post-landing (knee uncrouch window), require 1.35x threshold
-    const effectiveTakeoffThreshold = (framesSinceLastJump <= 10) ? (jumpThreshold * 1.35) : jumpThreshold;
+    // Require two grounded frames before rearming. This distinguishes a new jump from
+    // the torso/knee rebound that follows a landing at medium camera range.
+    const isGroundedForRearm = trackerY >= (baselineY - (jumpThreshold * 0.35));
+    if (isLandingUncrouch) {
+        landingGroundedFrames = isGroundedForRearm ? landingGroundedFrames + 1 : 0;
+        if (landingGroundedFrames >= 2) {
+            isLandingUncrouch = false;
+            landingGroundedFrames = 0;
+        }
+    }
+
+    // Keep only a small post-landing guard so quick consecutive jumps are not rejected.
+    const effectiveTakeoffThreshold = (framesSinceLastJump <= 5) ? (jumpThreshold * 1.10) : jumpThreshold;
 
     if (trackerY < (baselineY - effectiveTakeoffThreshold)) {
-        if (!isJumping && !isLandingUncrouch) {
+        if (!isJumping) {
             // Require distance-aware refractory period since last landed jump and 300ms cooldown since last lateral walking step
-            if ((now - lastJumpTime > minRefractory) && (now - lastWalkTime > 300)) {
+            if (!isLandingUncrouch && (now - lastJumpTime > minRefractory) && (now - lastWalkTime > 300)) {
                 isJumping = true;
                 jumpFrames = 0;
+                jumpTakeoffTime = now;
+                jumpPeakDisplacement = Math.max(0, baselineY - trackerY);
                 jumpStartTorso = referenceHeight;
             }
         } else {
             jumpFrames++;
+            jumpPeakDisplacement = Math.max(jumpPeakDisplacement, baselineY - trackerY);
             // Cancel fake jumps (too long in air: > 40 frames / ~1.3 seconds)
             if (jumpFrames > 40) {
                 isJumping = false;
+                jumpTakeoffTime = 0;
+                jumpPeakDisplacement = 0;
                 lastJumpTime = Date.now();
                 framesSinceLastJump = 0;
             }
             // Cancel fake jumps (leaning over or walking changes torso size)
             const jumpTorsoDiff = Math.abs(referenceHeight - jumpStartTorso);
-            if (jumpTorsoDiff / jumpStartTorso > 0.25 && jumpTorsoDiff > 0.005) {
+            const inJumpDepthTolerance = hipsVisible ? 0.30 : 0.40;
+            if (jumpTorsoDiff / jumpStartTorso > inJumpDepthTolerance && jumpTorsoDiff > 0.005) {
                 isJumping = false;
+                jumpTakeoffTime = 0;
+                jumpPeakDisplacement = 0;
                 lastJumpTime = Date.now();
                 framesSinceLastJump = 0;
             }
@@ -1840,45 +3300,28 @@ function processJumpLogic(landmarks) {
             // Require returning near ground level (within 30% of jump height) to complete landing
             const landingThreshold = Math.max(jumpThreshold * 0.30, 0.0003);
             if (trackerY > (baselineY - landingThreshold)) {
-                if (jumpFrames >= 1) { // 1 frame at peak is sufficient for fast jumps
+                const airborneMs = jumpTakeoffTime > 0 ? now - jumpTakeoffTime : 0;
+                const hasJumpShape = airborneMs >= 70 && jumpPeakDisplacement >= jumpThreshold * 1.05;
+                const outsideCountDebounce = lastConfirmedJumpTime === 0 || now - lastConfirmedJumpTime >= 320;
+                if (hasJumpShape && outsideCountDebounce) {
                     jumpCount++;
                     updateUI();
+                    lastConfirmedJumpTime = now;
                     lastJumpTime = Date.now();
-                    
-                    // Handle Ice Block breaking over 5 jumps!
-                    if (iceState > 0) {
-                        iceBreakCount++;
-                        if (iceBreakCount >= 5) {
-                            iceState = 0; // Shattered!
-                            iceBreakCount = 0;
-                            spawnIceParticles(frozenBoxX || currentBoxX, frozenBoxY || currentBoxY, frozenBoxW || currentBoxW, frozenBoxH || currentBoxH);
-                            frozenBoxX = null;
-                            frozenBoxY = null;
-                            frozenBoxW = null;
-                            frozenBoxH = null;
-                        }
-                    }
+                    registerCountedJumpForCompactUI(lastJumpTime);
+                    registerJumpAgainstIce(lastJumpTime);
                 }
                 isJumping = false;
+                jumpTakeoffTime = 0;
+                jumpPeakDisplacement = 0;
                 isLandingUncrouch = true;
+                landingGroundedFrames = isGroundedForRearm ? 1 : 0;
                 framesSinceLastJump = 0;
             }
         } else {
             framesSinceLastJump++;
             
-            // Clear landing uncrouch lock once body settles back down near ground level
-            if (trackerY >= (baselineY - (jumpThreshold * 0.15))) {
-                isLandingUncrouch = false;
-            }
-            
-            // Check for 5-second idle freezing: if grounded and not jumping for > 5 seconds, freeze box!
-            const lastActiveTime = lastJumpTime > 0 ? lastJumpTime : (sessionStartTime || Date.now());
-            if (Date.now() - lastActiveTime > 5000) {
-                if (iceState === 0) {
-                    iceState = 1; // Frozen Ice Block!
-                    iceBreakCount = 0;
-                }
-            }
+            refreezeIceAfterInactivity(now, true);
 
             if (framesSinceLastJump > 30) { // ~1.0 second idle at 30fps
                 // Rapidly recalibrate baseline to current standing position when idle
@@ -1927,30 +3370,66 @@ function closeOverlay(overlayEl, returnToActive = true) {
     }, 250);
 }
 
+function updateRestTimerDisplay() {
+    if (!isResting || !restStartTime) return;
+
+    let displaySeconds;
+    if (cooldownEndsAt !== null) {
+        displaySeconds = Math.max(0, Math.ceil((cooldownEndsAt - Date.now()) / 1000));
+        if (displaySeconds === 0 && !cooldownAdvancePending) {
+            cooldownAdvancePending = true;
+            setTimeout(() => {
+                if (isResting && cooldownEndsAt !== null && currentSet < targetSets) {
+                    continueSetBtn.click();
+                }
+            }, 250);
+        }
+    } else {
+        displaySeconds = Math.floor((Date.now() - restStartTime) / 1000);
+    }
+
+    const minutes = String(Math.floor(displaySeconds / 60)).padStart(2, '0');
+    const seconds = String(displaySeconds % 60).padStart(2, '0');
+    document.getElementById('rest-timer').innerText = `${minutes}:${seconds}`;
+}
+
+function stopWorkoutAtGoalCompletion() {
+    workoutCompletedAt = Date.now();
+
+    if (!isPaused && !isOutOfFrame && sessionStartTime) {
+        accumulatedTime += workoutCompletedAt - sessionStartTime;
+    }
+
+    isPaused = true;
+    isResting = false;
+    restStartTime = null;
+    cooldownEndsAt = null;
+    cooldownAdvancePending = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+}
+
 function updateUI() {
     if (goalMode) {
+        currentSetStreak++;
+        currentSetBestStreak = Math.max(currentSetBestStreak, currentSetStreak);
         currentReps++;
+        damageMonsterForCurrentJump();
         const displayTotal = skipBreaks ? (targetReps * targetSets) : targetReps;
         jumpCountEl.innerText = `${currentReps} / ${displayTotal}`;
         
         const isSetComplete = skipBreaks ? (currentReps % targetReps === 0) : (currentReps >= targetReps);
         
         if (isSetComplete) {
+            completedSetBestStreaks.push(currentSetBestStreak);
+            currentSetStreak = 0;
+            currentSetBestStreak = 0;
             // Set Complete
             if (currentSet >= targetSets) {
-                // Workout Complete
-                isPaused = true;
-                isResting = true;
-                restStartTime = Date.now();
-                document.getElementById('rest-timer').innerText = "00:00";
-                accumulatedTime += Date.now() - sessionStartTime;
-                
-                setCompleteProgressText.innerText = `Set ${currentSet} out of ${targetSets} completed`;
-                explicitPauseStartTime = Date.now();
-                setCompleteTitle.innerText = "WORKOUT COMPLETE";
-                setCompleteTitle.style.color = "#4caf50";
-                continueSetBtn.innerText = "View Final Stats";
-                openOverlay(setCompleteOverlay);
+                // Pause immediately, then briefly show the defeated monster before stats.
+                stopWorkoutAtGoalCompletion();
+                setTimeout(() => doneBtn.click(), 850);
+                return;
             } else if (skipBreaks) {
                 // Skip break, go straight to next set
                 currentSet++;
@@ -1962,13 +3441,16 @@ function updateUI() {
                 isPaused = true;
                 isResting = true;
                 restStartTime = Date.now();
-                document.getElementById('rest-timer').innerText = "00:00";
+                cooldownEndsAt = manualBreaks ? null : restStartTime + cooldownDuration * 1000;
+                cooldownAdvancePending = false;
                 accumulatedTime += Date.now() - sessionStartTime;
                 
-                setCompleteProgressText.innerText = `Set ${currentSet} out of ${targetSets} completed`;
-                setCompleteTitle.innerText = `SET ${currentSet} COMPLETE`;
+                setCompleteProgressText.innerText =
+                    `${activeMonster?.name || "Monster"} defeated · ${currentSet} / ${targetSets} SETS DONE`;
+                setCompleteTitle.innerText = manualBreaks ? "BREAK" : "COOLDOWN";
                 setCompleteTitle.style.color = "#ff5722";
-                continueSetBtn.innerText = "Continue to Next Set";
+                continueSetBtn.innerText = manualBreaks ? "Continue to Next Set" : "Skip Cooldown";
+                updateRestTimerDisplay();
                 openOverlay(setCompleteOverlay);
             }
         }
@@ -1987,17 +3469,13 @@ function updateUI() {
         maxStreakDuration = Date.now() - currentStreakStartTime;
     }
     
-    const streakEl = document.getElementById('streak-counter');
-    streakEl.innerText = `${currentStreak} STREAK! 🔥`;
-    streakEl.style.display = "block";
-    streakEl.classList.add('pop');
-    setTimeout(() => streakEl.classList.remove('pop'), 150);
+    showStreakBurst(currentStreak);
 
-    if (streakTimeout) clearTimeout(streakTimeout);
-    streakTimeout = setTimeout(() => {
-        currentStreak = 0;
-        streakEl.style.display = "none";
-    }, 3000);
+    if (!isPaused && !isResting && !isCountdownActive) {
+        startStreakGracePeriod();
+    } else {
+        suspendStreakExpiry();
+    }
 
     uiPanel.classList.add('bump');
     setTimeout(() => {
@@ -2007,6 +3485,15 @@ function updateUI() {
 
 doneBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
+    timerInterval = null;
+    resetCompactWorkoutUI();
+    cooldownEndsAt = null;
+    cooldownAdvancePending = false;
+    isResting = false;
+    restStartTime = null;
+    hideMonsterChallenge();
+    setCompleteOverlay.classList.remove('show');
+    setCompleteOverlay.style.display = "none";
     if (isCountdownActive) {
         clearInterval(countInterval);
         isCountdownActive = false;
@@ -2033,26 +3520,36 @@ doneBtn.addEventListener('click', () => {
         explicitPauseStartTime = null;
     }
     
+    const sessionEndedAt = workoutCompletedAt || Date.now();
     let totalElapsedMs = 0;
     if (totalSessionStartTime) {
-        totalElapsedMs = Date.now() - totalSessionStartTime - totalSessionPauseOffset;
+        totalElapsedMs = sessionEndedAt - totalSessionStartTime - totalSessionPauseOffset;
     }
     const totalElapsedSecs = Math.max(1, Math.floor(totalElapsedMs / 1000));
     const tMins = String(Math.floor(totalElapsedSecs / 60)).padStart(2, '0');
     const tSecs = String(totalElapsedSecs % 60).padStart(2, '0');
     
-    const elapsedMs = accumulatedTime + (isPaused || isOutOfFrame ? 0 : (Date.now() - sessionStartTime));
-    const elapsedSecs = Math.max(1, Math.floor(elapsedMs / 1000));
+    const elapsedMs = getActiveWorkoutElapsedMs(sessionEndedAt);
+    const elapsedSecs = Math.max(0, Math.floor(elapsedMs / 1000));
     const mins = String(Math.floor(elapsedSecs / 60)).padStart(2, '0');
     const secs = String(elapsedSecs % 60).padStart(2, '0');
-    const jpm = Math.round(jumpCount / (elapsedSecs / 60));
+    const jpm = elapsedSecs > 0 ? Math.round(jumpCount / (elapsedSecs / 60)) : 0;
+    const frozenElapsedMs = getFrozenElapsedMs(sessionEndedAt);
+    const frozenElapsedSecs = Math.max(0, Math.floor(frozenElapsedMs / 1000));
+    const frozenMins = String(Math.floor(frozenElapsedSecs / 60)).padStart(2, '0');
+    const frozenSecs = String(frozenElapsedSecs % 60).padStart(2, '0');
+    const frozenTimeText = `${frozenMins}:${frozenSecs}`;
     
     statJumps.innerText = jumpCount;
     document.getElementById('stat-total-time').innerText = `${tMins}:${tSecs}`;
     statTime.innerText = `${mins}:${secs}`;
+    document.getElementById('stat-freeze-time').innerText = frozenTimeText;
     const distanceMiles = (jumpCount * 0.0015).toFixed(2);
+    const estimatedCalories = jumpCount * 0.10;
     statSpeed.innerText = jpm;
     statDist.innerText = `${distanceMiles} mi`;
+    document.getElementById('stat-calories').innerText =
+        `${Number.isInteger(estimatedCalories) ? estimatedCalories : estimatedCalories.toFixed(1)} kcal`;
     
     const streakSecs = Math.max(0, Math.floor(maxStreakDuration / 1000));
     const sMins = String(Math.floor(streakSecs / 60)).padStart(2, '0');
@@ -2060,12 +3557,18 @@ doneBtn.addEventListener('click', () => {
     
     document.getElementById('stat-max-streak').innerText = maxStreak.toString();
     document.getElementById('stat-max-streak-time').innerText = `${sMins}:${sSecs}`;
+    const avgSetStreak = completedSetBestStreaks.length > 0
+        ? completedSetBestStreaks.reduce((sum, streak) => sum + streak, 0) / completedSetBestStreaks.length
+        : 0;
+    document.getElementById('stat-avg-streak-per-set').innerText =
+        Number.isInteger(avgSetStreak) ? avgSetStreak.toString() : avgSetStreak.toFixed(1);
     
     const statGoalSummary = document.getElementById('stat-goal-summary');
     const statSetsDone = document.getElementById('stat-sets-done');
     const statSetsTotal = document.getElementById('stat-sets-total');
     
     if (goalMode) {
+        document.getElementById('stat-avg-streak-row').style.display = "flex";
         // currentSet might be 1 when they quit, if they didn't finish the 1st set, it should show 0 completed.
         const completedSets = (currentReps >= targetReps) ? currentSet : (currentSet - 1);
         statSetsDone.innerText = completedSets;
@@ -2077,15 +3580,25 @@ doneBtn.addEventListener('click', () => {
         restartGoalInputs.classList.add('show');
         restartTargetRepsInput.value = targetReps;
         restartTargetSetsInput.value = targetSets;
+        const advancedFlowEnabled = skipBreaks || skipCountdown || manualBreaks;
+        restartFlowToggle.checked = advancedFlowEnabled;
+        restartFlowInputs.classList.toggle('show', advancedFlowEnabled);
+        restartRemovePausesInput.checked = skipBreaks;
+        document.getElementById('restart-remove-countdown').checked = skipCountdown;
+        restartManualBreaksInput.checked = manualBreaks;
         document.getElementById('restart-countdown-duration').value = countdownDuration;
+        document.getElementById('restart-cooldown-duration').value = cooldownDuration;
     } else {
+        document.getElementById('stat-avg-streak-row').style.display = "none";
         statGoalSummary.style.display = "none";
         
         // Sync restart overlay toggle & countdown duration
         restartGoalToggle.checked = false;
         restartGoalInputs.classList.remove('show');
         document.getElementById('restart-countdown-duration').value = countdownDuration;
+        document.getElementById('restart-cooldown-duration').value = cooldownDuration;
     }
+    updateSingleSetFlowOptions();
     
     const statsPanel = document.getElementById('stats-panel');
     activeSessionUI.classList.add('fade-out');
@@ -2113,6 +3626,10 @@ doneBtn.addEventListener('click', () => {
             totalTime: `${tMins}:${tSecs}`,
             speed: jpm,
             distance: `${distanceMiles} mi`,
+            calories: estimatedCalories,
+            monstersKilled: monstersKilledThisSession,
+            freezeTime: frozenTimeText,
+            freezeTimeMs: Math.round(frozenElapsedMs),
             maxStreak: maxStreak,
             maxStreakTime: `${sMins}:${sSecs}`,
             goalInfo: goalMode ? `Completed ${(currentReps >= targetReps) ? currentSet : (currentSet - 1)} of ${targetSets} Sets` : null
@@ -2144,6 +3661,7 @@ pauseBtn.addEventListener('click', () => {
 
     if (!isPaused) {
         // Pause the session
+        suspendStreakExpiry();
         isPaused = true;
         if (!isOutOfFrame) {
             accumulatedTime += Date.now() - sessionStartTime;
@@ -2158,6 +3676,7 @@ pauseBtn.addEventListener('click', () => {
         if (!isOutOfFrame) {
             sessionStartTime = Date.now();
         }
+        startStreakGracePeriod();
         pauseBtn.innerText = "Pause Session";
         pauseBtn.style.background = "#ff9800"; // Back to orange
         statusText.style.display = "none";
@@ -2165,6 +3684,10 @@ pauseBtn.addEventListener('click', () => {
 });
 
 continueSetBtn.addEventListener('click', () => {
+    cooldownEndsAt = null;
+    cooldownAdvancePending = false;
+    isResting = false;
+    restStartTime = null;
     closeOverlay(setCompleteOverlay, true);
     setTimeout(() => {
         if (currentSet >= targetSets) {
@@ -2174,6 +3697,7 @@ continueSetBtn.addEventListener('click', () => {
             currentReps = 0;
             setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
             jumpCountEl.innerText = `${currentReps} / ${targetReps}`;
+            initializeMonsterChallenge(currentSet, 0);
             
             pauseBtn.innerText = "Pause Session";
             pauseBtn.style.background = "#ff9800";
@@ -2188,6 +3712,7 @@ continueSetBtn.addEventListener('click', () => {
             if (skipCountdown) {
                 isPaused = false;
                 sessionStartTime = Date.now();
+                startStreakGracePeriod();
             } else {
                 startSessionWithCountdown();
             }
@@ -2212,27 +3737,48 @@ restartBtn.addEventListener('click', () => {
     jumpCount = 0;
     baselineY = null;
     isJumping = false;
+    jumpTakeoffTime = 0;
+    isLandingUncrouch = false;
     accumulatedTime = 0;
+    timerEl.innerText = "00:00";
     totalSessionStartTime = null;
     totalSessionPauseOffset = 0;
     explicitPauseStartTime = null;
+    workoutCompletedAt = null;
     isResting = false;
     lostTrackingFrames = 0;
     depthChangeFrames = 0;
     framesSinceLastJump = 0;
     lastXPositions = [];
     currentStreak = 0;
+    streakSuspendedAt = null;
     maxStreak = 0;
     maxStreakDuration = 0;
     currentStreakStartTime = null;
+    currentSetStreak = 0;
+    currentSetBestStreak = 0;
+    completedSetBestStreaks = [];
+    monstersKilledThisSession = 0;
+    lastConfirmedJumpTime = 0;
+    landingGroundedFrames = 0;
+    jumpPeakDisplacement = 0;
     if (streakTimeout) clearTimeout(streakTimeout);
-    document.getElementById('streak-counter').style.display = "none";
+    clearStreakBursts();
+    resetCompactWorkoutUI();
+    resetFreezeTracking();
     
     // Read countdown duration from restart input
     const rCdInput = parseInt(document.getElementById('restart-countdown-duration').value, 10);
-    if (!isNaN(rCdInput) && rCdInput > 0) {
-        countdownDuration = rCdInput;
+    if (!isNaN(rCdInput)) {
+        countdownDuration = Math.min(60, Math.max(5, rCdInput));
+        document.getElementById('restart-countdown-duration').value = countdownDuration;
         document.getElementById('countdown-duration').value = countdownDuration;
+    }
+    const rCooldownInput = parseInt(document.getElementById('restart-cooldown-duration').value, 10);
+    if (!isNaN(rCooldownInput)) {
+        cooldownDuration = Math.min(300, Math.max(0, rCooldownInput));
+        document.getElementById('restart-cooldown-duration').value = cooldownDuration;
+        document.getElementById('cooldown-duration').value = cooldownDuration;
     }
 
     // Read new goal settings from the restart overlay
@@ -2240,9 +3786,15 @@ restartBtn.addEventListener('click', () => {
     if (goalMode) {
         targetReps = parseInt(restartTargetRepsInput.value, 10) || 0;
         targetSets = parseInt(restartTargetSetsInput.value, 10) || 0;
+        updateSingleSetFlowOptions();
         const rFlowEnabled = document.getElementById('restart-flow-toggle').checked;
         skipBreaks = rFlowEnabled && document.getElementById('restart-remove-pauses').checked;
         skipCountdown = rFlowEnabled && document.getElementById('restart-remove-countdown').checked;
+        manualBreaks = rFlowEnabled && document.getElementById('restart-manual-breaks').checked;
+        if (targetSets === 1) {
+            skipBreaks = false;
+            skipCountdown = false;
+        }
         if (targetReps <= 0 || targetSets <= 0) {
             goalMode = false;
         }
@@ -2255,9 +3807,11 @@ restartBtn.addEventListener('click', () => {
         setProgressEl.style.display = "block";
         const displayTotal = skipBreaks ? (targetReps * targetSets) : targetReps;
         jumpCountEl.innerText = `${currentReps} / ${displayTotal}`;
+        initializeMonsterChallenge(currentSet, 0);
     } else {
         setProgressEl.style.display = "none";
         jumpCountEl.innerText = jumpCount;
+        hideMonsterChallenge();
     }
     
     navigator.mediaDevices.getUserMedia({ 
@@ -2274,18 +3828,11 @@ restartBtn.addEventListener('click', () => {
         statusText.style.display = "none";
         sessionStartTime = Date.now();
         timerInterval = setInterval(() => {
-            if (!isPaused && !isOutOfFrame) {
-                const elapsed = Math.floor((accumulatedTime + (Date.now() - sessionStartTime)) / 1000);
-                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-                const secs = String(elapsed % 60).padStart(2, '0');
-                timerEl.innerText = `${mins}:${secs}`;
-            }
-            if (isResting && restStartTime) {
-                const restElapsed = Math.floor((Date.now() - restStartTime) / 1000);
-                const rMins = String(Math.floor(restElapsed / 60)).padStart(2, '0');
-                const rSecs = String(restElapsed % 60).padStart(2, '0');
-                document.getElementById('rest-timer').innerText = `${rMins}:${rSecs}`;
-            }
+            const elapsed = Math.floor(getActiveWorkoutElapsedMs() / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            timerEl.innerText = `${mins}:${secs}`;
+            updateRestTimerDisplay();
         }, 1000);
         startSessionWithCountdown();
         // The loadeddata event listener attached during the first start will automatically trigger predictWebcam safely
@@ -2335,6 +3882,10 @@ midSessionCancelBtn.addEventListener('click', () => {
 
 midSessionApplyBtn.addEventListener('click', () => {
     goalMode = true;
+    currentSetStreak = 0;
+    currentSetBestStreak = 0;
+    completedSetBestStreaks = [];
+    monstersKilledThisSession = 0;
     targetReps = parseInt(document.getElementById('mid-target-reps').value, 10) || 0;
     targetSets = parseInt(document.getElementById('mid-target-sets').value, 10) || 0;
     
@@ -2347,6 +3898,11 @@ midSessionApplyBtn.addEventListener('click', () => {
     const flowEnabled = document.getElementById('flow-toggle').checked;
     skipBreaks = flowEnabled && document.getElementById('remove-pauses').checked;
     skipCountdown = flowEnabled && document.getElementById('remove-countdown').checked;
+    manualBreaks = flowEnabled && document.getElementById('manual-breaks').checked;
+    if (targetSets === 1) {
+        skipBreaks = false;
+        skipCountdown = false;
+    }
     
     const totalTarget = targetReps * targetSets;
     
@@ -2363,26 +3919,16 @@ midSessionApplyBtn.addEventListener('click', () => {
     if (jumpCount >= totalTarget) {
         currentSet = targetSets;
         if (!skipBreaks) currentReps = targetReps;
-        
-        isPaused = true;
-        isResting = true;
-        restStartTime = Date.now();
-        document.getElementById('rest-timer').innerText = "00:00";
-        accumulatedTime += Date.now() - sessionStartTime;
-        
-        setCompleteProgressText.innerText = `Set ${currentSet} out of ${targetSets} completed`;
-        explicitPauseStartTime = Date.now();
-        setCompleteTitle.innerText = "WORKOUT COMPLETE";
-        setCompleteTitle.style.color = "#4caf50";
-        continueSetBtn.innerText = "View Final Stats";
-        
+        stopWorkoutAtGoalCompletion();
         closeMidSessionGoalPanel(() => {
-            openOverlay(setCompleteOverlay);
+            doneBtn.click();
         });
     } else {
         const displayTotal = skipBreaks ? totalTarget : targetReps;
         jumpCountEl.innerText = `${currentReps} / ${displayTotal}`;
         setProgressEl.innerText = `Set ${currentSet} / ${targetSets}`;
+        const completedInCurrentSet = skipBreaks ? (currentReps % targetReps) : currentReps;
+        initializeMonsterChallenge(currentSet, completedInCurrentSet);
         closeMidSessionGoalPanel();
     }
     
@@ -2413,12 +3959,61 @@ function getHistoryStorageKey() {
     return 'jump_rope_tracker_history';
 }
 
-function loadHistoryFromStorage() {
+function readStoredHistorySnapshot() {
     try {
         const stored = localStorage.getItem(getHistoryStorageKey());
-        if (stored) {
-            jumpHistory = JSON.parse(stored);
-        }
+        if (!stored) return [];
+        const parsed = JSON.parse(stored);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.warn("Failed reading stored workout history:", e);
+        return [];
+    }
+}
+
+function getSessionMergeKey(session) {
+    if (session.id !== undefined && session.id !== null && String(session.id).trim() !== "") {
+        return `id:${String(session.id)}`;
+    }
+
+    // Legacy backups may not contain an ID. Use stable workout fields to avoid duplicates.
+    return [
+        "legacy",
+        session.dateStr || "",
+        session.name || "",
+        session.jumps || 0,
+        session.activeTime || "",
+        session.totalTime || ""
+    ].join("|");
+}
+
+function getSessionSortTime(session) {
+    const numericId = Number(session.id);
+    if (Number.isFinite(numericId)) return numericId;
+    const parsedDate = Date.parse(session.dateStr || "");
+    return Number.isFinite(parsedDate) ? parsedDate : 0;
+}
+
+function mergeWorkoutHistories(...historySources) {
+    const mergedBySession = new Map();
+
+    // Later sources win duplicate IDs. Callers put current browser data last so an
+    // imported backup can never replace the browser's newest copy of a session.
+    historySources.forEach(source => {
+        if (!Array.isArray(source)) return;
+        source.forEach(session => {
+            if (!session || typeof session !== "object" || Array.isArray(session)) return;
+            mergedBySession.set(getSessionMergeKey(session), session);
+        });
+    });
+
+    return Array.from(mergedBySession.values())
+        .sort((a, b) => getSessionSortTime(b) - getSessionSortTime(a));
+}
+
+function loadHistoryFromStorage() {
+    try {
+        jumpHistory = mergeWorkoutHistories(jumpHistory, readStoredHistorySnapshot());
     } catch (e) {
         console.warn("Failed loading history from localStorage:", e);
     }
@@ -2439,9 +4034,16 @@ function saveHistoryToStorage() {
 window.loadNativeHistory = function(jsonString) {
     try {
         if (jsonString && jsonString.trim().length > 0) {
-            jumpHistory = JSON.parse(jsonString);
-            localStorage.setItem(getHistoryStorageKey(), JSON.stringify(jumpHistory));
-            renderHistoryUI();
+            const nativeHistory = JSON.parse(jsonString);
+            if (Array.isArray(nativeHistory)) {
+                jumpHistory = mergeWorkoutHistories(
+                    nativeHistory,
+                    readStoredHistorySnapshot(),
+                    jumpHistory
+                );
+                saveHistoryToStorage();
+                renderHistoryUI();
+            }
         }
     } catch (e) {
         console.warn("Failed loading native history JSON:", e);
@@ -2449,7 +4051,11 @@ window.loadNativeHistory = function(jsonString) {
 };
 
 function saveSessionRecord(record) {
-    jumpHistory.unshift(record);
+    jumpHistory = mergeWorkoutHistories(
+        readStoredHistorySnapshot(),
+        jumpHistory,
+        [record]
+    );
     saveHistoryToStorage();
 }
 
@@ -2457,9 +4063,11 @@ function renderHistoryUI() {
     let totalJumps = 0;
     let totalActiveSecs = 0;
     let totalSpeedSum = 0;
+    let totalMonstersKilled = 0;
     
     jumpHistory.forEach(s => {
         totalJumps += s.jumps || 0;
+        totalMonstersKilled += Number(s.monstersKilled) || 0;
         if (s.activeTime) {
             const parts = s.activeTime.split(':');
             if (parts.length === 2) {
@@ -2478,6 +4086,7 @@ function renderHistoryUI() {
     document.getElementById('hist-total-sessions').innerText = totalSessions.toString();
     document.getElementById('hist-total-time').innerText = `${tMins}:${tSecs}`;
     document.getElementById('hist-avg-speed').innerText = `${avgSpeed} JPM`;
+    document.getElementById('hist-total-monsters').innerText = totalMonstersKilled.toLocaleString();
 
     historyListContainer.innerHTML = '';
     const searchBar = document.getElementById('history-search-bar');
@@ -2562,14 +4171,28 @@ function openSessionDetails(id) {
     if (!session) return;
     selectedSessionId = id;
 
+    const storedCalories = session.calories === null || session.calories === undefined
+        ? NaN
+        : parseFloat(session.calories);
+    const estimatedCalories = Number.isFinite(storedCalories)
+        ? storedCalories
+        : (Number(session.jumps) || 0) * 0.10;
+    const calorieText = Number.isInteger(estimatedCalories)
+        ? estimatedCalories.toString()
+        : estimatedCalories.toFixed(1);
+
     document.getElementById('detail-date').innerText = session.dateStr;
     document.getElementById('detail-jumps').innerText = session.jumps;
+    document.getElementById('detail-monsters-killed').innerText =
+        (Number(session.monstersKilled) || 0).toLocaleString();
     document.getElementById('detail-max-streak').innerText = session.maxStreak || 0;
     document.getElementById('detail-max-streak-time').innerText = session.maxStreakTime || '00:00';
     document.getElementById('detail-active-time').innerText = session.activeTime || '00:00';
+    document.getElementById('detail-freeze-time').innerText = session.freezeTime || '00:00';
     document.getElementById('detail-total-time').innerText = session.totalTime || '00:00';
     document.getElementById('detail-speed').innerText = `${session.speed || 0} JPM`;
     document.getElementById('detail-distance').innerText = session.distance || '0 mi';
+    document.getElementById('detail-calories').innerText = `${calorieText} kcal`;
 
     const detailGoal = document.getElementById('detail-goal-summary');
     if (session.goalInfo) {
@@ -2705,10 +4328,22 @@ importHistoryFile.addEventListener('change', (e) => {
         try {
             const imported = JSON.parse(event.target.result);
             if (Array.isArray(imported)) {
-                jumpHistory = imported;
+                const sessionsBeforeImport = mergeWorkoutHistories(
+                    readStoredHistorySnapshot(),
+                    jumpHistory
+                );
+                jumpHistory = mergeWorkoutHistories(
+                    imported,
+                    readStoredHistorySnapshot(),
+                    jumpHistory
+                );
+                const sessionsAdded = Math.max(0, jumpHistory.length - sessionsBeforeImport.length);
                 saveHistoryToStorage();
                 renderHistoryUI();
-                alert("Successfully imported workout history JSON!");
+                alert(
+                    `Workout history merged successfully. ${sessionsAdded} session(s) added; ` +
+                    `${jumpHistory.length} total session(s) are ready to export.`
+                );
             } else {
                 alert("Invalid JSON format. Expected an array of session records.");
             }
@@ -2717,6 +4352,7 @@ importHistoryFile.addEventListener('change', (e) => {
         }
     };
     reader.readAsText(file);
+    e.target.value = "";
 });
 
 // Load history on initial page load
@@ -2745,7 +4381,7 @@ jumperNameInput.addEventListener('input', () => {
         welcomeTitle.innerText = `Welcome, ${name}!`;
     } else {
         localStorage.removeItem('jr_jumper_name');
-        welcomeTitle.innerText = 'Welcome to Jump Rope Tracker';
+        welcomeTitle.innerText = 'Welcome!';
     }
 });
 
@@ -2812,15 +4448,12 @@ async function writeHistoryToDir(handle) {
             const existingText = await existingFile.text();
             const existingSessions = JSON.parse(existingText);
             if (Array.isArray(existingSessions)) {
-                // Merge: add any file sessions whose IDs aren't already in memory
-                const memoryIds = new Set(jumpHistory.map(s => s.id));
-                const newFromFile = existingSessions.filter(s => !memoryIds.has(s.id));
-                if (newFromFile.length > 0) {
-                    jumpHistory = [...jumpHistory, ...newFromFile];
-                    // Sort by newest first (highest id = most recent timestamp)
-                    jumpHistory.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-                    localStorage.setItem(getHistoryStorageKey(), JSON.stringify(jumpHistory));
-                }
+                jumpHistory = mergeWorkoutHistories(
+                    existingSessions,
+                    readStoredHistorySnapshot(),
+                    jumpHistory
+                );
+                saveHistoryToStorage();
             }
         } catch (e) {
             // File doesn't exist yet — that's fine, nothing to merge
@@ -2846,14 +4479,12 @@ async function readHistoryFromDir(handle) {
         const text = await file.text();
         const parsed = JSON.parse(text);
         if (Array.isArray(parsed)) {
-            // Merge file sessions with in-memory sessions
-            const memoryIds = new Set(jumpHistory.map(s => s.id));
-            const newFromFile = parsed.filter(s => !memoryIds.has(s.id));
-            if (newFromFile.length > 0) {
-                jumpHistory = [...jumpHistory, ...newFromFile];
-                jumpHistory.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-            }
-            localStorage.setItem(getHistoryStorageKey(), JSON.stringify(jumpHistory));
+            jumpHistory = mergeWorkoutHistories(
+                parsed,
+                readStoredHistorySnapshot(),
+                jumpHistory
+            );
+            saveHistoryToStorage();
             return true;
         }
     } catch (e) {
