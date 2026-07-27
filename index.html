@@ -3033,12 +3033,9 @@ function processStableJumpLogic(landmarks) {
 
     const now = Date.now();
     const heightUnits = (baselineY - stableTrackerY) / Math.max(stableBodyScale, 0.04);
-    // Count low, rope-style hops (roughly 1–3 inches) without requiring a high jump.
-    // Two takeoff frames plus a confirmed landing still protect against pose jitter.
-    const takeoffThreshold = trackingMode === "hips" ? 0.045 : 0.06;
-    const strongTakeoffThreshold = takeoffThreshold * 1.30;
-    // A wider landing window lets rapid low hops close before the next takeoff begins.
-    const landingThreshold = takeoffThreshold * 0.70;
+    const takeoffThreshold = trackingMode === "hips" ? 0.105 : 0.13;
+    const strongTakeoffThreshold = takeoffThreshold * 1.55;
+    const landingThreshold = takeoffThreshold * 0.35;
 
     if (stableJumpPhase === "grounded") {
         // Adapt only while close to the standing baseline; never chase a body upward.
@@ -3073,8 +3070,8 @@ function processStableJumpLogic(landmarks) {
         const strongLanding = heightUnits <= 0;
         if (stableLandingFrames >= 2 || strongLanding) {
             const airborneMs = now - stableJumpStartedAt;
-            const hasValidShape = airborneMs >= 35 && stableJumpPeak >= takeoffThreshold * 1.02;
-            const outsideCountDebounce = lastConfirmedJumpTime === 0 || now - lastConfirmedJumpTime >= 170;
+            const hasValidShape = airborneMs >= 45 && stableJumpPeak >= takeoffThreshold * 1.05;
+            const outsideCountDebounce = lastConfirmedJumpTime === 0 || now - lastConfirmedJumpTime >= 300;
 
             if (hasValidShape && outsideCountDebounce) {
                 jumpCount++;
