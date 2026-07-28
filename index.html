@@ -25,6 +25,7 @@ body, html {
     position: relative;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -147,7 +148,9 @@ canvas {
     .welcome-animation svg {
         width: 100vw;
         height: 72vh;
+        height: 72dvh;
         right: -18%;
+        bottom: max(12px, env(safe-area-inset-bottom));
         opacity: 0.72;
     }
 }
@@ -983,6 +986,7 @@ input[type="number"]::-webkit-outer-spin-button {
             padding: 16px 20px;
             max-width: calc(100vw - 30px);
             max-height: calc(100vh - 30px);
+            max-height: calc(100dvh - 30px);
             border-radius: 20px;
         }
         .counter { 
@@ -1022,6 +1026,7 @@ input[type="number"]::-webkit-outer-spin-button {
             padding: 12px 14px;
             max-width: calc(100vw - 20px);
             max-height: calc(100vh - 20px);
+            max-height: calc(100dvh - 20px);
             border-radius: 16px;
         }
         .counter { 
@@ -1071,6 +1076,59 @@ input[type="number"]::-webkit-outer-spin-button {
         }
         .goal-toggle-wrapper {
             font-size: 15px !important;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .goal-inputs.flow-settings-inputs {
+            width: 100%;
+            box-sizing: border-box;
+            flex-direction: column !important;
+            align-items: stretch;
+            justify-content: flex-start !important;
+            gap: 10px !important;
+            margin: 10px 0 0 !important;
+            padding: 0;
+        }
+
+        .goal-inputs.flow-settings-inputs.show {
+            max-height: 520px;
+        }
+
+        .flow-option-label {
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: flex-start;
+            gap: 10px;
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.35;
+            text-align: left;
+        }
+
+        .flow-option-label input[type="checkbox"] {
+            flex: 0 0 auto;
+            margin: 0;
+        }
+
+        .flow-timing-row {
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .flow-timing-label {
+            flex: 1 1 auto;
+            min-width: 0;
+            line-height: 1.35;
+            text-align: left;
+        }
+
+        .flow-settings-inputs .flow-number-input {
+            flex: 0 0 72px;
+            width: 72px !important;
+            box-sizing: border-box;
         }
     }
     
@@ -1132,6 +1190,105 @@ input[type="number"]::-webkit-outer-spin-button {
 #active-session-ui.compact-workout-ui > #session-controls,
 #active-session-ui.compact-workout-ui > #done-btn {
     display: none !important;
+}
+
+@media (max-width: 700px) {
+    .ui-panel.compact-workout-panel {
+        width: auto !important;
+        max-width: none;
+        max-height: none;
+        top: 10px;
+        left: 10px;
+        padding: 5px 14px;
+        border-radius: 14px;
+        overflow: visible;
+        background: rgba(12, 12, 12, 0.76);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.45);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .ui-panel.compact-workout-panel.bump {
+        transform: none;
+    }
+
+    .ui-panel.compact-workout-panel #active-session-ui {
+        width: auto !important;
+        transform: none !important;
+    }
+
+    #active-session-ui.compact-workout-ui > #timer {
+        display: block !important;
+        margin: 1px 0 0 !important;
+        font-size: 16px !important;
+        line-height: 1;
+    }
+
+    .ui-panel.compact-workout-panel #jump-count {
+        margin: 0 !important;
+        font-size: 52px !important;
+        line-height: 0.95;
+        text-shadow: 0 0 20px rgba(255, 87, 34, 0.65);
+    }
+
+    #active-session-ui.compact-workout-ui > #session-controls {
+        display: flex !important;
+    }
+
+    #active-session-ui.compact-workout-ui > #done-btn {
+        display: block !important;
+    }
+
+    .ui-panel.compact-workout-panel #session-controls {
+        position: fixed;
+        left: max(8px, env(safe-area-inset-left));
+        right: calc(33.333vw + 2px);
+        bottom: max(8px, env(safe-area-inset-bottom));
+        z-index: 100;
+        box-sizing: border-box;
+        gap: 5px !important;
+        margin: 0 !important;
+        padding: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 17px;
+        background: rgba(28, 28, 30, 0.82);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(18px) saturate(1.35);
+        -webkit-backdrop-filter: blur(18px) saturate(1.35);
+    }
+
+    .ui-panel.compact-workout-panel #session-controls > button {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 44px;
+        margin: 0 !important;
+        padding: 8px 5px !important;
+        border-radius: 12px !important;
+        font-size: 11px !important;
+        line-height: 1.15;
+    }
+
+    .ui-panel.compact-workout-panel #done-btn {
+        position: fixed;
+        right: max(8px, env(safe-area-inset-right));
+        bottom: max(8px, env(safe-area-inset-bottom));
+        z-index: 101;
+        width: calc(33.333vw - 14px);
+        min-height: 58px;
+        box-sizing: border-box;
+        margin: 0 !important;
+        padding: 8px 5px !important;
+        border-radius: 17px !important;
+        font-size: 0 !important;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    }
+
+    .ui-panel.compact-workout-panel #done-btn::after {
+        content: "Done";
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
 }
 
 #add-goal-btn {
@@ -1756,16 +1913,19 @@ let workoutCompletedAt = null;
 let isResting = false;
 let restStartTime = null;
 
-// Compact workout UI: five quick jumps hides everything except the counter and timer.
+// Compact workout UI: on phones the first jump clears the camera view; larger
+// screens retain the existing five-quick-jump trigger.
 const QUICK_JUMP_SEQUENCE_TARGET = 5;
 const QUICK_JUMP_MAX_GAP_MS = 1500;
 const COMPACT_UI_IDLE_MS = 5000;
+const MOBILE_WORKOUT_VIEW = window.matchMedia('(max-width: 700px)');
 let quickJumpSequence = 0;
 let previousCountedJumpTime = 0;
 let compactUiReturnTimeout = null;
 
 function setCompactWorkoutUI(isCompact) {
     document.getElementById('active-session-ui').classList.toggle('compact-workout-ui', isCompact);
+    uiPanel.classList.toggle('compact-workout-panel', isCompact);
 }
 
 function resetCompactWorkoutUI() {
@@ -1786,7 +1946,8 @@ function registerCountedJumpForCompactUI(countedAt) {
     }
     previousCountedJumpTime = countedAt;
 
-    if (quickJumpSequence >= QUICK_JUMP_SEQUENCE_TARGET) {
+    const compactTrigger = MOBILE_WORKOUT_VIEW.matches ? 1 : QUICK_JUMP_SEQUENCE_TARGET;
+    if (quickJumpSequence >= compactTrigger) {
         setCompactWorkoutUI(true);
     }
 
@@ -2394,27 +2555,6 @@ function startStreakGracePeriod() {
     }
 }
 
-function resetStreakAnchorAfterMovement() {
-    if (!streakAnchor || streakLayer.classList.contains("fading")) return;
-
-    const currentPosition = calculateStreakAnchor(streakAnchor.side);
-    const movedHorizontally =
-        Math.abs(currentPosition.headX - streakAnchor.headX) > streakAnchor.horizontalMoveThreshold;
-    const movedVertically =
-        Math.abs(currentPosition.headY - streakAnchor.headY) > streakAnchor.verticalMoveThreshold;
-
-    if (!movedHorizontally && !movedVertically) return;
-
-    // Leave the existing numbers at their original screen position while they fade.
-    streakAnchor = null;
-    streakLayer.classList.add("fading");
-    streakMovementFadeTimeout = setTimeout(() => {
-        if (!streakAnchor) {
-            clearStreakBursts();
-        }
-    }, 720);
-}
-
 function showStreakBurst(streakCount) {
     if (streakLayer.classList.contains("fading")) {
         clearStreakBursts();
@@ -2558,27 +2698,30 @@ function damageMonsterForCurrentJump() {
 
     const remainingHp = Math.max(0, targetReps - repsDoneThisSet);
     const healthPercent = (remainingHp / targetReps) * 100;
-    updateMonsterHealthDisplay(remainingHp, healthPercent);
 
-    monsterArtEl.classList.remove("hit");
-    void monsterArtEl.offsetWidth;
-    monsterArtEl.classList.add("hit");
+    requestAnimationFrame(() => {
+        updateMonsterHealthDisplay(remainingHp, healthPercent);
 
-    const damageEl = document.createElement("span");
-    damageEl.className = "monster-damage";
-    damageEl.innerText = "-1";
-    monsterArtEl.appendChild(damageEl);
-    setTimeout(() => damageEl.remove(), 600);
-
-    if (remainingHp === 0 && !monsterArtEl.classList.contains("defeated")) {
-        monstersKilledThisSession++;
         monsterArtEl.classList.remove("hit");
-        monsterArtEl.classList.add("defeated");
-        const defeatedLabel = document.createElement("div");
-        defeatedLabel.className = "monster-defeated-label";
-        defeatedLabel.innerText = "DEFEATED!";
-        monsterArtEl.appendChild(defeatedLabel);
-    }
+        void monsterArtEl.offsetWidth;
+        monsterArtEl.classList.add("hit");
+
+        const damageEl = document.createElement("span");
+        damageEl.className = "monster-damage";
+        damageEl.innerText = "-1";
+        monsterArtEl.appendChild(damageEl);
+        setTimeout(() => damageEl.remove(), 600);
+
+        if (remainingHp === 0 && !monsterArtEl.classList.contains("defeated")) {
+            monstersKilledThisSession++;
+            monsterArtEl.classList.remove("hit");
+            monsterArtEl.classList.add("defeated");
+            const defeatedLabel = document.createElement("div");
+            defeatedLabel.className = "monster-defeated-label";
+            defeatedLabel.innerText = "DEFEATED!";
+            monsterArtEl.appendChild(defeatedLabel);
+        }
+    });
 }
 
 function startPredictionLoop() {
@@ -2643,8 +2786,8 @@ function predictWebcam() {
         console.warn("Pose detection frame skipped:", detectErr);
     }
     
-    // Sample at roughly 42 FPS so short, quick rope hops still produce enough pose frames.
-    setTimeout(predictWebcam, 24);
+    // Keep frame loop locked to 33ms (approx 30fps) so jump tracking frame thresholds stay calibrated.
+    setTimeout(predictWebcam, 33);
 }
 
 function spawnIceParticles(x, y, bw, bh) {
@@ -2796,7 +2939,6 @@ function drawWireframe(landmarks, w, h) {
         currentHeadTopY = yMin;
         currentHeadWidth = Math.max(42, bw * 0.38);
     }
-    resetStreakAnchorAfterMovement();
     
     if (iceState === 0) {
         // Purple full-body tracking box
