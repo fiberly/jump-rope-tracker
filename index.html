@@ -2208,6 +2208,25 @@ const COMPACT_UI_IDLE_MS = 5000;
 const MOBILE_WORKOUT_VIEW = window.matchMedia(
     '(max-width: 700px), (hover: none) and (pointer: coarse)'
 );
+const MOBILE_INFERENCE_INTERVAL_MS = 45;
+
+function getCameraVideoConstraints() {
+    if (MOBILE_WORKOUT_VIEW.matches) {
+        return {
+            facingMode: "user",
+            width: { ideal: 640, max: 960 },
+            height: { ideal: 480, max: 720 },
+            frameRate: { ideal: 24, max: 24 }
+        };
+    }
+
+    return {
+        facingMode: "user",
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+    };
+}
+
 let quickJumpSequence = 0;
 let previousCountedJumpTime = 0;
 let compactUiReturnTimeout = null;
@@ -2655,11 +2674,15 @@ startBtn.addEventListener('click', async () => {
         let stream;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: getCameraVideoConstraints()
             });
         } catch (camErr) {
             console.warn("Fallback to generic video constraint:", camErr);
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: MOBILE_WORKOUT_VIEW.matches
+                    ? { facingMode: "user", frameRate: { ideal: 20, max: 24 } }
+                    : true
+            });
         }
         video.srcObject = stream;
         video.onloadeddata = () => {
@@ -3065,6 +3088,19 @@ function startPredictionLoop() {
     predictWebcam();
 }
 
+function scheduleNextPrediction(frameStartedAt) {
+    let delayMs = 33;
+
+    if (MOBILE_WORKOUT_VIEW.matches) {
+        const frameWorkMs = performance.now() - frameStartedAt;
+        // Preserve a short cooling gap even after a slow inference. This naturally
+        // lowers the frame rate as a phone warms up instead of building a queue.
+        delayMs = Math.max(12, MOBILE_INFERENCE_INTERVAL_MS - frameWorkMs);
+    }
+
+    setTimeout(predictWebcam, delayMs);
+}
+
 function predictWebcam() {
     if (!cameraActive) {
         predictionLoopActive = false;
@@ -3079,51 +3115,55 @@ function predictWebcam() {
     
     // Prevent MediaPipe WASM crash by ensuring video has data before predicting
     if (video.readyState < 2) {
-        setTimeout(predictWebcam, 33);
+        setTimeout(predictWebcam, MOBILE_WORKOUT_VIEW.matches ? MOBILE_INFERENCE_INTERVAL_MS : 33);
         return;
     }
 
     resizeCanvas();
     
-    let startTimeMs = performance.now();
+    const startTimeMs = performance.now();
     try {
         poseLandmarker.detectForVideo(video, startTimeMs, (result) => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (result.landmarks && result.landmarks.length > 0) {
-                const landmarks = result.landmarks[0];
-                drawWireframe(landmarks, canvas.width, canvas.height);
-                processStableJumpLogic(landmarks);
-            } else {
-                baselineY = null;
-                baselineTorsoHeight = null;
-                isJumping = false;
-                jumpTakeoffTime = 0;
-                lostTrackingFrames++;
+            try {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
-                // Show OUT OF FRAME only after sustained pose loss, not a single skipped frame.
-                const isConfigActive = (
-                    document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
-                    document.getElementById('history-panel')?.style.display === "flex" ||
-                    document.getElementById('history-detail-panel')?.style.display === "flex" ||
-                    document.getElementById('stats-panel')?.style.display === "flex" ||
-                    document.getElementById('set-complete-overlay')?.style.display === "flex"
-                );
-                if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
-                    isOutOfFrame = true;
-                    boundsWarning.classList.add("show");
-                    if (!isPaused) {
-                        accumulatedTime += Date.now() - sessionStartTime;
+                if (result.landmarks && result.landmarks.length > 0) {
+                    const landmarks = result.landmarks[0];
+                    drawWireframe(landmarks, canvas.width, canvas.height);
+                    processStableJumpLogic(landmarks);
+                } else {
+                    baselineY = null;
+                    baselineTorsoHeight = null;
+                    isJumping = false;
+                    jumpTakeoffTime = 0;
+                    lostTrackingFrames++;
+                    
+                    // Show OUT OF FRAME only after sustained pose loss, not a single skipped frame.
+                    const isConfigActive = (
+                        document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
+                        document.getElementById('history-panel')?.style.display === "flex" ||
+                        document.getElementById('history-detail-panel')?.style.display === "flex" ||
+                        document.getElementById('stats-panel')?.style.display === "flex" ||
+                        document.getElementById('set-complete-overlay')?.style.display === "flex"
+                    );
+                    if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
+                        isOutOfFrame = true;
+                        boundsWarning.classList.add("show");
+                        if (!isPaused) {
+                            accumulatedTime += Date.now() - sessionStartTime;
+                        }
                     }
                 }
+            } catch (frameErr) {
+                console.warn("Pose frame processing skipped:", frameErr);
+            } finally {
+                scheduleNextPrediction(startTimeMs);
             }
         });
     } catch (detectErr) {
         console.warn("Pose detection frame skipped:", detectErr);
+        scheduleNextPrediction(startTimeMs);
     }
-    
-    // Keep frame loop locked to 33ms (approx 30fps) so jump tracking frame thresholds stay calibrated.
-    setTimeout(predictWebcam, 33);
 }
 
 function spawnIceParticles(x, y, bw, bh) {
@@ -4314,7 +4354,7 @@ restartBtn.addEventListener('click', () => {
     }
     
     navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+        video: getCameraVideoConstraints()
     }).then((stream) => {
         video.srcObject = stream;
         video.play();
