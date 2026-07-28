@@ -815,7 +815,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .monster-hp-label {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     margin: 12px 2px 6px;
     color: rgba(255, 255, 255, 0.85);
     font-size: 18px;
@@ -918,37 +918,60 @@ input[type="number"]::-webkit-outer-spin-button {
 
 @media (max-width: 700px) {
     .monster-challenge {
-        top: auto;
-        right: 12px;
-        bottom: 12px;
-        width: 240px;
-        padding: 12px 14px 14px;
-        transform-origin: bottom right;
+        top: 10px;
+        right: 10px;
+        bottom: auto;
+        width: 118px;
+        padding: 6px 7px 8px;
+        border-radius: 14px;
+        transform-origin: top right;
     }
 
     .monster-art {
-        height: 155px;
+        height: 68px;
+        margin: 0;
     }
 
     .monster-art svg {
-        width: 140px;
-        height: 155px;
+        width: 64px;
+        height: 68px;
     }
 
     .monster-emoji {
-        font-size: 112px;
+        font-size: 50px;
     }
 
     .monster-name {
-        font-size: 28px;
+        margin-top: 1px;
+        font-size: 14px;
+        line-height: 1.05;
     }
 
     .monster-eyebrow {
-        font-size: 15px;
+        font-size: 9px;
+        letter-spacing: 0.8px;
     }
 
     .monster-hp-label {
-        font-size: 14px;
+        margin: 4px 1px 3px;
+        font-size: 8px;
+        letter-spacing: 0.2px;
+    }
+
+    .monster-health-track {
+        height: 16px;
+        padding: 3px;
+    }
+
+    .monster-damage {
+        top: 8px;
+        right: 9px;
+        font-size: 20px;
+    }
+
+    .monster-defeated-label {
+        inset: 12px 0 auto;
+        font-size: 15px;
     }
 }
 
@@ -1192,15 +1215,21 @@ input[type="number"]::-webkit-outer-spin-button {
     display: none !important;
 }
 
+#mobile-workout-nav {
+    display: none;
+}
+
 @media (max-width: 700px) {
     .ui-panel.compact-workout-panel {
-        width: auto !important;
-        max-width: none;
+        width: 116px !important;
+        height: 116px;
+        max-width: 116px;
         max-height: none;
         top: 10px;
         left: 10px;
-        padding: 5px 14px;
-        border-radius: 14px;
+        padding: 10px;
+        box-sizing: border-box;
+        border-radius: 18px;
         overflow: visible;
         background: rgba(12, 12, 12, 0.76);
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.45);
@@ -1214,41 +1243,68 @@ input[type="number"]::-webkit-outer-spin-button {
 
     .ui-panel.compact-workout-panel #active-session-ui {
         width: auto !important;
+        height: 100%;
+        justify-content: center;
         transform: none !important;
     }
 
     #active-session-ui.compact-workout-ui > #timer {
         display: block !important;
-        margin: 1px 0 0 !important;
-        font-size: 16px !important;
+        margin: 4px 0 0 !important;
+        font-size: 20px !important;
         line-height: 1;
     }
 
     .ui-panel.compact-workout-panel #jump-count {
         margin: 0 !important;
-        font-size: 52px !important;
+        font-size: 40px !important;
         line-height: 0.95;
+        letter-spacing: -1px;
+        white-space: nowrap;
         text-shadow: 0 0 20px rgba(255, 87, 34, 0.65);
     }
 
-    #active-session-ui.compact-workout-ui > #session-controls {
-        display: flex !important;
+    .ui-panel.compact-workout-panel.mobile-countdown-panel {
+        left: 10px;
+        transform: none;
+        padding: 10px;
+        text-align: center;
     }
 
-    #active-session-ui.compact-workout-ui > #done-btn {
-        display: block !important;
+    .ui-panel.compact-workout-panel.mobile-countdown-panel.bump {
+        transform: none;
     }
 
-    .ui-panel.compact-workout-panel #session-controls {
+    .ui-panel.mobile-countdown-panel #jump-count,
+    .ui-panel.mobile-countdown-panel #active-session-ui.compact-workout-ui > #timer {
+        display: none !important;
+    }
+
+    .ui-panel.mobile-countdown-panel #countdown-container {
+        margin: 0 !important;
+    }
+
+    .ui-panel.mobile-countdown-panel #countdown-number {
+        font-size: 58px !important;
+        line-height: 0.95 !important;
+    }
+
+    .ui-panel.mobile-countdown-panel #countdown-container > div:last-child {
+        margin-top: 5px !important;
+        font-size: 11px !important;
+        letter-spacing: 1.4px !important;
+    }
+
+    #mobile-workout-nav {
         position: fixed;
         left: max(8px, env(safe-area-inset-left));
-        right: calc(33.333vw + 2px);
+        right: max(8px, env(safe-area-inset-right));
         bottom: max(8px, env(safe-area-inset-bottom));
         z-index: 100;
-        box-sizing: border-box;
-        gap: 5px !important;
-        margin: 0 !important;
+        align-items: stretch;
+        gap: 6px;
         padding: 6px;
+        box-sizing: border-box;
         border: 1px solid rgba(255, 255, 255, 0.16);
         border-radius: 17px;
         background: rgba(28, 28, 30, 0.82);
@@ -1257,37 +1313,98 @@ input[type="number"]::-webkit-outer-spin-button {
         -webkit-backdrop-filter: blur(18px) saturate(1.35);
     }
 
-    .ui-panel.compact-workout-panel #session-controls > button {
+    #mobile-workout-nav.show {
+        display: flex;
+    }
+
+    #mobile-workout-nav > button {
         flex: 1 1 0;
         min-width: 0;
         min-height: 44px;
-        margin: 0 !important;
-        padding: 8px 5px !important;
-        border-radius: 12px !important;
-        font-size: 11px !important;
-        line-height: 1.15;
-    }
-
-    .ui-panel.compact-workout-panel #done-btn {
-        position: fixed;
-        right: max(8px, env(safe-area-inset-right));
-        bottom: max(8px, env(safe-area-inset-bottom));
-        z-index: 101;
-        width: calc(33.333vw - 14px);
-        min-height: 58px;
-        box-sizing: border-box;
-        margin: 0 !important;
-        padding: 8px 5px !important;
-        border-radius: 17px !important;
-        font-size: 0 !important;
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
-    }
-
-    .ui-panel.compact-workout-panel #done-btn::after {
-        content: "Done";
+        margin: 0;
+        padding: 8px 5px;
+        border: 0;
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
         font-size: 12px;
         font-weight: 700;
+        line-height: 1.15;
         letter-spacing: 0.2px;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+            transform 0.16s cubic-bezier(0.4, 0, 0.2, 1),
+            box-shadow 0.16s ease,
+            filter 0.16s ease;
+    }
+
+    #mobile-workout-nav > button::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: rgba(255, 255, 255, 0.2);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.12s ease;
+    }
+
+    #mobile-workout-nav > button:active {
+        transform: scale(0.94);
+        filter: brightness(1.12);
+    }
+
+    #mobile-workout-nav > button:active::after {
+        opacity: 1;
+    }
+
+    #mobile-workout-nav > button:focus-visible {
+        outline: 2px solid #ffffff;
+        outline-offset: 2px;
+    }
+
+    #mobile-pause-btn {
+        background: linear-gradient(135deg, #ffad1f, #ff8f00);
+        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+    }
+
+    #mobile-pause-btn:active {
+        box-shadow: 0 0 24px rgba(255, 152, 0, 0.85);
+    }
+
+    #mobile-done-btn {
+        background: #ffffff;
+        color: #111111 !important;
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+    }
+
+    #mobile-done-btn:active {
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.8);
+    }
+
+    #mobile-goal-btn {
+        background: linear-gradient(135deg, #2196f3, #1976d2);
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+    }
+
+    #mobile-goal-btn:active {
+        box-shadow: 0 0 24px rgba(33, 150, 243, 0.85);
+    }
+
+    @media (hover: hover) {
+        #mobile-workout-nav > button:hover {
+            transform: translateY(-2px) scale(1.025);
+            filter: brightness(1.08);
+        }
+
+        #mobile-workout-nav > button:hover:active {
+            transform: translateY(0) scale(0.94);
+            filter: brightness(1.12);
+        }
     }
 }
 
@@ -1340,8 +1457,7 @@ input[type="number"]::-webkit-outer-spin-button {
             <div id="monster-art" class="monster-art" aria-hidden="true"></div>
             <div id="monster-name" class="monster-name">Potato Chip Bag</div>
             <div class="monster-hp-label">
-                <span>MONSTER HP</span>
-                <span id="monster-hp-text">25 / 25 HP</span>
+                <span id="monster-hp-text">HP 25/25</span>
             </div>
             <div class="monster-health-track">
                 <div id="monster-health-fill" class="monster-health-fill"></div>
@@ -1750,6 +1866,12 @@ input[type="number"]::-webkit-outer-spin-button {
             </div>
         </div> <!-- End ui-panel -->
 
+        <nav id="mobile-workout-nav" aria-label="Workout controls">
+            <button type="button" id="mobile-pause-btn">Pause</button>
+            <button type="button" id="mobile-done-btn">Done</button>
+            <button type="button" id="mobile-goal-btn">+ Goal</button>
+        </nav>
+
     <!-- Status text -->
 
     <div id="status" class="status-text">Loading Model...</div>
@@ -1792,6 +1914,10 @@ const restartBtn = document.getElementById('restart-btn');
 const startBtn = document.getElementById('start-btn');
 const statusText = document.getElementById('status');
 const uiPanel = document.querySelector('.ui-panel');
+const mobileWorkoutNav = document.getElementById('mobile-workout-nav');
+const mobilePauseBtn = document.getElementById('mobile-pause-btn');
+const mobileDoneBtn = document.getElementById('mobile-done-btn');
+const mobileGoalBtn = document.getElementById('mobile-goal-btn');
 const boundsWarning = document.getElementById('bounds-warning');
 const streakLayer = document.getElementById('streak-counter');
 const monsterChallengeEl = document.getElementById('monster-challenge');
@@ -1913,8 +2039,8 @@ let workoutCompletedAt = null;
 let isResting = false;
 let restStartTime = null;
 
-// Compact workout UI: on phones the first jump clears the camera view; larger
-// screens retain the existing five-quick-jump trigger.
+// Phones use the camera-first workout layout throughout the active session;
+// larger screens retain the existing five-quick-jump compact trigger.
 const QUICK_JUMP_SEQUENCE_TARGET = 5;
 const QUICK_JUMP_MAX_GAP_MS = 1500;
 const COMPACT_UI_IDLE_MS = 5000;
@@ -1922,10 +2048,27 @@ const MOBILE_WORKOUT_VIEW = window.matchMedia('(max-width: 700px)');
 let quickJumpSequence = 0;
 let previousCountedJumpTime = 0;
 let compactUiReturnTimeout = null;
+let mobileWorkoutBarPersistent = false;
+
+function syncMobileWorkoutNav() {
+    mobilePauseBtn.textContent = pauseBtn.innerText.startsWith("Resume") ? "Resume" : "Pause";
+    const hasActiveRepSetGoal = goalMode && targetReps > 0 && targetSets > 0;
+    mobileGoalBtn.hidden =
+        hasActiveRepSetGoal ||
+        document.getElementById('add-goal-btn').style.display === "none";
+}
 
 function setCompactWorkoutUI(isCompact) {
-    document.getElementById('active-session-ui').classList.toggle('compact-workout-ui', isCompact);
-    uiPanel.classList.toggle('compact-workout-panel', isCompact);
+    const useCompactLayout = isCompact || (
+        mobileWorkoutBarPersistent && MOBILE_WORKOUT_VIEW.matches
+    );
+    document.getElementById('active-session-ui').classList.toggle('compact-workout-ui', useCompactLayout);
+    uiPanel.classList.toggle('compact-workout-panel', useCompactLayout);
+    const showMobileNav = useCompactLayout && MOBILE_WORKOUT_VIEW.matches;
+    mobileWorkoutNav.classList.toggle('show', showMobileNav);
+    if (showMobileNav) {
+        syncMobileWorkoutNav();
+    }
 }
 
 function resetCompactWorkoutUI() {
@@ -1935,6 +2078,7 @@ function resetCompactWorkoutUI() {
     }
     quickJumpSequence = 0;
     previousCountedJumpTime = 0;
+    uiPanel.classList.remove('mobile-countdown-panel');
     setCompactWorkoutUI(false);
 }
 
@@ -1946,8 +2090,12 @@ function registerCountedJumpForCompactUI(countedAt) {
     }
     previousCountedJumpTime = countedAt;
 
-    const compactTrigger = MOBILE_WORKOUT_VIEW.matches ? 1 : QUICK_JUMP_SEQUENCE_TARGET;
-    if (quickJumpSequence >= compactTrigger) {
+    if (MOBILE_WORKOUT_VIEW.matches) {
+        setCompactWorkoutUI(true);
+        return;
+    }
+
+    if (quickJumpSequence >= QUICK_JUMP_SEQUENCE_TARGET) {
         setCompactWorkoutUI(true);
     }
 
@@ -1961,6 +2109,20 @@ function registerCountedJumpForCompactUI(countedAt) {
         compactUiReturnTimeout = null;
     }, COMPACT_UI_IDLE_MS);
 }
+
+mobilePauseBtn.addEventListener('click', () => {
+    pauseBtn.click();
+    syncMobileWorkoutNav();
+});
+
+mobileDoneBtn.addEventListener('click', () => {
+    doneBtn.click();
+});
+
+mobileGoalBtn.addEventListener('click', () => {
+    mobileWorkoutNav.classList.remove('show');
+    document.getElementById('add-goal-btn').click();
+});
 
 // Ice Block & Particle System State
 const ICE_REFREEZE_IDLE_MS = 5000;
@@ -2222,6 +2384,10 @@ function startCountdownInterval() {
             video.classList.remove("blur-background");
             canvas.classList.remove("blur-background");
             startStreakGracePeriod();
+            uiPanel.classList.remove('mobile-countdown-panel');
+            if (MOBILE_WORKOUT_VIEW.matches) {
+                setCompactWorkoutUI(true);
+            }
         }
     }, 1000);
 }
@@ -2253,6 +2419,7 @@ function startSessionWithCountdown() {
     isPaused = true;
     isCountdownActive = true;
     isCountdownPaused = false;
+    mobileWorkoutBarPersistent = MOBILE_WORKOUT_VIEW.matches;
     suspendStreakExpiry();
     countdownDuration = Math.min(60, Math.max(5, Number(countdownDuration) || 5));
     document.getElementById('countdown-duration').value = countdownDuration;
@@ -2278,6 +2445,10 @@ function startSessionWithCountdown() {
     overlay.style.display = "block";
     container.style.display = "flex";
     numEl.innerText = currentCountdownValue;
+    if (MOBILE_WORKOUT_VIEW.matches) {
+        setCompactWorkoutUI(true);
+        uiPanel.classList.add('mobile-countdown-panel');
+    }
     
     startCountdownInterval();
 }
@@ -2679,7 +2850,7 @@ function initializeMonsterChallenge(setNumber, repsCompleted = 0) {
 }
 
 function updateMonsterHealthDisplay(remainingHp, healthPercent) {
-    monsterHpTextEl.innerText = `${remainingHp} / ${targetReps} HP`;
+    monsterHpTextEl.innerText = `HP ${remainingHp}/${targetReps}`;
     monsterHealthFillEl.style.width = `${Math.max(0, healthPercent)}%`;
     monsterHealthFillEl.classList.toggle("warning", healthPercent > 25 && healthPercent <= 55);
     monsterHealthFillEl.classList.toggle("critical", healthPercent <= 25);
@@ -3625,6 +3796,7 @@ function updateUI() {
 doneBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
     timerInterval = null;
+    mobileWorkoutBarPersistent = false;
     resetCompactWorkoutUI();
     cooldownEndsAt = null;
     cooldownAdvancePending = false;
@@ -4010,6 +4182,9 @@ function closeMidSessionGoalPanel(onComplete) {
         } else {
             activeSessionUI.style.display = "flex";
             activeSessionUI.classList.add('fade-in');
+            if (MOBILE_WORKOUT_VIEW.matches) {
+                setCompactWorkoutUI(true);
+            }
             setTimeout(() => activeSessionUI.classList.remove('fade-in'), 350);
         }
     }, 180);
