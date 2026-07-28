@@ -2134,6 +2134,7 @@ countdownDurationInputs.forEach(input => {
 });
 
 let poseLandmarker;
+let poseLandmarkerResetPromise = null;
 let runningMode = "VIDEO";
 let lastVideoTime = -1;
 let cameraActive = false;
@@ -2166,6 +2167,16 @@ let cooldownDuration = 30;
 let cooldownEndsAt = null;
 let cooldownAdvancePending = false;
 let countInterval = null;
+let calibrationPoseFrames = 0;
+let outOfFrameStartedAt = null;
+let requiresPoseTrackerRecalibration = false;
+let untrustedPoseFrames = 0;
+let lastTrustedPoseSignature = null;
+let calibrationPoseSignature = null;
+let reacquisitionCandidateOrigin = null;
+let reacquisitionCandidateFrames = 0;
+let reacquisitionCandidateMaxMovement = 0;
+let reacquisitionCandidateMaxScaleChange = 0;
 let lostTrackingFrames = 0;
 let depthChangeFrames = 0;
 let currentStreak = 0;
@@ -2212,6 +2223,11 @@ const MOBILE_INFERENCE_INTERVAL_MS = 50;
 const MOBILE_MIN_COOLING_GAP_MS = 16;
 const MOBILE_RENDER_EVERY_N_INFERENCES = 2;
 const DESKTOP_INFERENCE_INTERVAL_MS = 33;
+const RESUME_CALIBRATION_COUNTDOWN_SECONDS = 5;
+const CALIBRATION_POSE_FRAMES_REQUIRED = 8;
+const REACQUISITION_MOTION_FRAMES_REQUIRED = 6;
+const REACQUISITION_CENTER_MOVEMENT_REQUIRED = 0.055;
+const REACQUISITION_SCALE_CHANGE_REQUIRED = 0.18;
 let mobileInferenceCount = 0;
 
 function getCameraVideoConstraints() {
@@ -2509,7 +2525,7 @@ const POSE_CONNECTIONS = [
 ];
 
 // Initialize MediaPipe Tasks
-async function initializeModel() {
+async function initializeModel(showReadyUI = true) {
     const mobileModelPath = "./pose_landmarker_lite.task";
     const desktopModelPath = "./pose_landmarker_full.task";
     const modelPath = MOBILE_WORKOUT_VIEW.matches ? mobileModelPath : desktopModelPath;
@@ -2551,9 +2567,229 @@ async function initializeModel() {
             console.error("CDN model initialization failed:", cdnErr);
         }
     }
-    statusText.innerText = "Ready!";
-    startBtn.style.display = "block";
-    goalSettings.style.display = "flex";
+    if (showReadyUI) {
+        statusText.innerText = "Ready!";
+        startBtn.style.display = "block";
+        goalSettings.style.display = "flex";
+    }
+}
+
+function requestPoseLandmarkerReset() {
+    if (poseLandmarkerResetPromise) {
+        return poseLandmarkerResetPromise;
+    }
+
+    poseLandmarkerResetPromise = new Promise(resolve => setTimeout(resolve, 0))
+        .then(async () => {
+            const previousLandmarker = poseLandmarker;
+            poseLandmarker = null;
+            lastVideoTime = -1;
+
+            if (previousLandmarker && typeof previousLandmarker.close === "function") {
+                try {
+                    previousLandmarker.close();
+                } catch (closeErr) {
+                    console.warn("Previous pose tracker could not be closed cleanly:", closeErr);
+                }
+            }
+
+            await initializeModel(false);
+        })
+        .catch(resetErr => {
+            console.error("Pose tracker recalibration failed:", resetErr);
+        })
+        .finally(() => {
+            poseLandmarkerResetPromise = null;
+        });
+
+    return poseLandmarkerResetPromise;
+}
+
+function getLandmarkConfidence(point) {
+    if (!point) return 0;
+    const visibility = Number.isFinite(point.visibility) ? point.visibility : 0;
+    const presence = Number.isFinite(point.presence) ? point.presence : 1;
+    return Math.min(visibility, presence);
+}
+
+function isLandmarkInFrame(point) {
+    return Boolean(
+        point &&
+        Number.isFinite(point.x) &&
+        Number.isFinite(point.y) &&
+        point.x >= 0 && point.x <= 1 &&
+        point.y >= 0 && point.y <= 1
+    );
+}
+
+function getTrustedPoseSignature(landmarks, strict = false) {
+    const leftShoulder = landmarks?.[11];
+    const rightShoulder = landmarks?.[12];
+    const leftHip = landmarks?.[23];
+    const rightHip = landmarks?.[24];
+    const nose = landmarks?.[0];
+    if (![leftShoulder, rightShoulder].every(isLandmarkInFrame)) return null;
+
+    const shoulderConfidence = Math.min(
+        getLandmarkConfidence(leftShoulder),
+        getLandmarkConfidence(rightShoulder)
+    );
+    if (shoulderConfidence < (strict ? 0.50 : 0.22)) return null;
+
+    const shoulderCenterX = (leftShoulder.x + rightShoulder.x) / 2;
+    const shoulderCenterY = (leftShoulder.y + rightShoulder.y) / 2;
+    const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+    if (shoulderWidth < 0.035 || shoulderWidth > 0.65) return null;
+
+    const hipsInFrame = [leftHip, rightHip].every(isLandmarkInFrame);
+    const hipConfidence = hipsInFrame
+        ? Math.min(getLandmarkConfidence(leftHip), getLandmarkConfidence(rightHip))
+        : 0;
+    const hipsTrusted = hipsInFrame && hipConfidence >= (strict ? 0.32 : 0.10);
+
+    let centerX;
+    let centerY;
+    let bodyScale;
+
+    if (hipsTrusted) {
+        const hipCenterX = (leftHip.x + rightHip.x) / 2;
+        const hipCenterY = (leftHip.y + rightHip.y) / 2;
+        const hipWidth = Math.abs(leftHip.x - rightHip.x);
+        const torsoHeight = hipCenterY - shoulderCenterY;
+
+        if (
+            hipWidth < 0.025 || hipWidth > 0.65 ||
+            torsoHeight < 0.035 || torsoHeight > 0.65 ||
+            Math.abs(shoulderCenterX - hipCenterX) > Math.max(0.20, shoulderWidth * 1.7)
+        ) {
+            return null;
+        }
+
+        centerX = (shoulderCenterX + hipCenterX) / 2;
+        centerY = (shoulderCenterY + hipCenterY) / 2;
+        bodyScale = Math.max(torsoHeight, shoulderWidth, hipWidth, 0.04);
+    } else {
+        if (
+            !isLandmarkInFrame(nose) ||
+            getLandmarkConfidence(nose) < (strict ? 0.38 : 0.12)
+        ) {
+            return null;
+        }
+
+        const headToShoulders = shoulderCenterY - nose.y;
+        if (headToShoulders < 0.02 || headToShoulders > 0.38) return null;
+        centerX = shoulderCenterX;
+        centerY = shoulderCenterY + headToShoulders * 0.65;
+        bodyScale = Math.max(shoulderWidth, headToShoulders * 2, 0.06);
+    }
+
+    const limbConfidenceFloor = strict ? 0.22 : 0.08;
+    const confidentLimbCount = [13, 14, 15, 16, 25, 26, 27, 28]
+        .map(index => landmarks[index])
+        .filter(point =>
+            isLandmarkInFrame(point) &&
+            getLandmarkConfidence(point) >= limbConfidenceFloor
+        ).length;
+    const requiredLimbCount = strict ? (hipsTrusted ? 4 : 3) : 2;
+    if (confidentLimbCount < requiredLimbCount) return null;
+
+    return {
+        centerX,
+        centerY,
+        scale: bodyScale
+    };
+}
+
+function isTrustedPoseContinuity(signature, calibration = false) {
+    if (!signature || !lastTrustedPoseSignature) return Boolean(signature);
+
+    const centerDistance = Math.hypot(
+        signature.centerX - lastTrustedPoseSignature.centerX,
+        signature.centerY - lastTrustedPoseSignature.centerY
+    );
+    const scaleRatio = signature.scale / Math.max(lastTrustedPoseSignature.scale, 0.04);
+    return (
+        centerDistance <= (calibration ? 0.34 : 0.20) &&
+        scaleRatio >= (calibration ? 0.40 : 0.55) &&
+        scaleRatio <= (calibration ? 2.50 : 1.80)
+    );
+}
+
+function resetReacquisitionCandidate() {
+    reacquisitionCandidateOrigin = null;
+    reacquisitionCandidateFrames = 0;
+    reacquisitionCandidateMaxMovement = 0;
+    reacquisitionCandidateMaxScaleChange = 0;
+}
+
+function recordReacquisitionCandidate(signature) {
+    if (!signature) {
+        resetReacquisitionCandidate();
+        return false;
+    }
+
+    if (!reacquisitionCandidateOrigin) {
+        reacquisitionCandidateOrigin = { ...signature };
+        reacquisitionCandidateFrames = 1;
+        return false;
+    }
+
+    reacquisitionCandidateFrames++;
+    reacquisitionCandidateMaxMovement = Math.max(
+        reacquisitionCandidateMaxMovement,
+        Math.hypot(
+            signature.centerX - reacquisitionCandidateOrigin.centerX,
+            signature.centerY - reacquisitionCandidateOrigin.centerY
+        )
+    );
+    reacquisitionCandidateMaxScaleChange = Math.max(
+        reacquisitionCandidateMaxScaleChange,
+        Math.abs(
+            signature.scale / Math.max(reacquisitionCandidateOrigin.scale, 0.04) - 1
+        )
+    );
+
+    return Boolean(
+        reacquisitionCandidateFrames >= REACQUISITION_MOTION_FRAMES_REQUIRED &&
+        (
+            reacquisitionCandidateMaxMovement >= REACQUISITION_CENTER_MOVEMENT_REQUIRED ||
+            reacquisitionCandidateMaxScaleChange >= REACQUISITION_SCALE_CHANGE_REQUIRED
+        )
+    );
+}
+
+function resetPoseTrackingCalibration() {
+    baselineY = null;
+    baselineTorsoHeight = null;
+    stableTrackerY = null;
+    stableBodyScale = null;
+    stableTrackingMode = null;
+    stableJumpPhase = "grounded";
+    stableTakeoffFrames = 0;
+    stableLandingFrames = 0;
+    stableJumpPeak = 0;
+    stableJumpStartedAt = 0;
+    isJumping = false;
+    jumpFrames = 0;
+    jumpTakeoffTime = 0;
+    jumpPeakDisplacement = 0;
+    jumpStartTorso = 0;
+    isLandingUncrouch = false;
+    landingGroundedFrames = 0;
+    lostTrackingFrames = 0;
+    depthChangeFrames = 0;
+    framesSinceLastJump = 0;
+    lastXPositions = [];
+    lastWalkTime = 0;
+    lastConfirmedJumpTime = 0;
+    untrustedPoseFrames = 0;
+    resetReacquisitionCandidate();
+    // Frozen geometry is visual state derived from the tracked body. Discard it
+    // with the pose baseline so a partial reacquisition cannot stay locked small.
+    frozenBoxX = null;
+    frozenBoxY = null;
+    frozenBoxW = null;
+    frozenBoxH = null;
 }
 
 function startCountdownInterval() {
@@ -2566,8 +2802,19 @@ function startCountdownInterval() {
         if (currentCountdownValue > 0) {
             numEl.innerText = currentCountdownValue;
         } else {
+            // Never resume against a stale or missing pose. Hold at one until
+            // shoulders have been tracked consistently for a few fresh frames.
+            if (calibrationPoseFrames < CALIBRATION_POSE_FRAMES_REQUIRED) {
+                currentCountdownValue = 1;
+                numEl.innerText = "1";
+                return;
+            }
+
             clearInterval(countInterval);
             isCountdownActive = false;
+            lastTrustedPoseSignature = calibrationPoseSignature || lastTrustedPoseSignature;
+            calibrationPoseSignature = null;
+            calibrationPoseFrames = 0;
             overlay.style.display = "none";
             container.style.display = "none";
             isPaused = false;
@@ -2584,6 +2831,45 @@ function startCountdownInterval() {
             }
         }
     }, 1000);
+}
+
+function startResumeCalibrationCountdown() {
+    if (countInterval) {
+        clearInterval(countInterval);
+    }
+
+    isPaused = true;
+    isCountdownActive = true;
+    isCountdownPaused = false;
+    suspendStreakExpiry();
+    resetPoseTrackingCalibration();
+    calibrationPoseFrames = 0;
+    calibrationPoseSignature = null;
+    currentCountdownValue = RESUME_CALIBRATION_COUNTDOWN_SECONDS;
+    isOutOfFrame = false;
+    outOfFrameStartedAt = null;
+    requiresPoseTrackerRecalibration = false;
+    boundsWarning.classList.remove("show");
+    requestPoseLandmarkerReset();
+
+    const overlay = document.getElementById('countdown-overlay');
+    const container = document.getElementById('countdown-container');
+    const numEl = document.getElementById('countdown-number');
+    overlay.style.display = "block";
+    container.style.display = "flex";
+    numEl.innerText = currentCountdownValue;
+
+    pauseBtn.innerText = "Pause Session";
+    pauseBtn.style.background = "#ff9800";
+    statusText.style.display = "none";
+
+    if (MOBILE_WORKOUT_VIEW.matches) {
+        setCompactWorkoutUI(true);
+        uiPanel.classList.add('mobile-countdown-panel');
+        syncMobileWorkoutNav();
+    }
+
+    startCountdownInterval();
 }
 
 function isActiveWorkoutClockRunning() {
@@ -2620,17 +2906,10 @@ function startSessionWithCountdown() {
     document.getElementById('restart-countdown-duration').value = countdownDuration;
     currentCountdownValue = countdownDuration;
     
-    // Reset baseline state on countdown start so initial posture calibrates cleanly
-    baselineY = null;
-    baselineTorsoHeight = null;
-    isJumping = false;
-    jumpTakeoffTime = 0;
-    jumpPeakDisplacement = 0;
-    isLandingUncrouch = false;
-    landingGroundedFrames = 0;
-    lostTrackingFrames = 0;
-    depthChangeFrames = 0;
-    framesSinceLastJump = 0;
+    // Reset every detector state on countdown start so posture calibrates cleanly.
+    resetPoseTrackingCalibration();
+    calibrationPoseFrames = 0;
+    calibrationPoseSignature = null;
     
     const overlay = document.getElementById('countdown-overlay');
     const container = document.getElementById('countdown-container');
@@ -2781,6 +3060,10 @@ startBtn.addEventListener('click', async () => {
         currentReps = 0;
         currentSet = 1;
         jumpCount = 0;
+        requiresPoseTrackerRecalibration = false;
+        untrustedPoseFrames = 0;
+        lastTrustedPoseSignature = null;
+        calibrationPoseSignature = null;
         lostTrackingFrames = 0;
         depthChangeFrames = 0;
         framesSinceLastJump = 0;
@@ -3156,12 +3439,103 @@ function predictWebcam() {
                 
                 if (result.landmarks && result.landmarks.length > 0) {
                     const landmarks = result.landmarks[0];
+                    const isConfigActive = (
+                        document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
+                        document.getElementById('history-panel')?.style.display === "flex" ||
+                        document.getElementById('history-detail-panel')?.style.display === "flex" ||
+                        document.getElementById('stats-panel')?.style.display === "flex" ||
+                        document.getElementById('set-complete-overlay')?.style.display === "flex"
+                    );
+                    const poseSignature = getTrustedPoseSignature(
+                        landmarks,
+                        isCountdownActive
+                    );
+                    const poseTrusted = Boolean(
+                        poseSignature &&
+                        isTrustedPoseContinuity(poseSignature, isCountdownActive)
+                    );
+
+                    if (isCountdownActive) {
+                        if (poseTrusted) {
+                            calibrationPoseSignature = poseSignature;
+                            calibrationPoseFrames = Math.min(
+                                CALIBRATION_POSE_FRAMES_REQUIRED,
+                                calibrationPoseFrames + 1
+                            );
+                        } else {
+                            calibrationPoseSignature = null;
+                            calibrationPoseFrames = 0;
+                        }
+                    }
+
+                    if (!poseTrusted) {
+                        if (requiresPoseTrackerRecalibration) {
+                            resetReacquisitionCandidate();
+                        }
+                        untrustedPoseFrames++;
+                        if (shouldRenderFrame) {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        }
+
+                        if (untrustedPoseFrames > 5 && !isCountdownActive) {
+                            requiresPoseTrackerRecalibration = true;
+                            if (
+                                !isOutOfFrame &&
+                                !isConfigActive &&
+                                cameraActive &&
+                                !isCountdownActive
+                            ) {
+                                isOutOfFrame = true;
+                                outOfFrameStartedAt = Date.now();
+                                boundsWarning.classList.add("show");
+                                if (!isPaused && sessionStartTime) {
+                                    accumulatedTime += Date.now() - sessionStartTime;
+                                }
+                            }
+                        }
+                        return;
+                    }
+
+                    untrustedPoseFrames = 0;
+                    if (
+                        requiresPoseTrackerRecalibration &&
+                        !isPaused &&
+                        !isCountdownActive &&
+                        !isConfigActive
+                    ) {
+                        const reacquisitionSignature = getTrustedPoseSignature(landmarks, true);
+                        const reacquisitionTrusted = Boolean(
+                            reacquisitionSignature &&
+                            isTrustedPoseContinuity(reacquisitionSignature, true)
+                        );
+                        if (!reacquisitionTrusted) {
+                            resetReacquisitionCandidate();
+                            if (shouldRenderFrame) {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            }
+                            return;
+                        }
+                        if (!recordReacquisitionCandidate(reacquisitionSignature)) {
+                            if (shouldRenderFrame) {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            }
+                            return;
+                        }
+                        startResumeCalibrationCountdown();
+                    }
+
                     if (shouldRenderFrame) {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         drawWireframe(landmarks, canvas.width, canvas.height);
                     }
                     processStableJumpLogic(landmarks);
                 } else {
+                    resetReacquisitionCandidate();
+                    if (isCountdownActive) {
+                        calibrationPoseFrames = 0;
+                        calibrationPoseSignature = null;
+                    }
+                    untrustedPoseFrames++;
                     if (shouldRenderFrame) {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                     }
@@ -3179,8 +3553,12 @@ function predictWebcam() {
                         document.getElementById('stats-panel')?.style.display === "flex" ||
                         document.getElementById('set-complete-overlay')?.style.display === "flex"
                     );
+                    if (lostTrackingFrames > 10 && !isCountdownActive) {
+                        requiresPoseTrackerRecalibration = true;
+                    }
                     if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
                         isOutOfFrame = true;
+                        outOfFrameStartedAt = Date.now();
                         boundsWarning.classList.add("show");
                         if (!isPaused) {
                             accumulatedTime += Date.now() - sessionStartTime;
@@ -3314,9 +3692,21 @@ function drawWireframe(landmarks, w, h) {
             accumulatedTime += Date.now() - sessionStartTime;
         }
     } else if ((!currentOutOfFrame || isConfigActive) && isOutOfFrame) {
+        const awayDurationMs = outOfFrameStartedAt
+            ? Date.now() - outOfFrameStartedAt
+            : 0;
         isOutOfFrame = false;
+        outOfFrameStartedAt = null;
         boundsWarning.classList.remove("show");
-        if (!isPaused && cameraActive && !isCountdownActive) {
+        if (
+            awayDurationMs >= 1500 &&
+            !isPaused &&
+            cameraActive &&
+            !isCountdownActive &&
+            !isConfigActive
+        ) {
+            startResumeCalibrationCountdown();
+        } else if (!isPaused && cameraActive && !isCountdownActive) {
             sessionStartTime = Date.now();
         }
     }
@@ -3364,12 +3754,23 @@ function drawWireframe(landmarks, w, h) {
         frozenBoxH = null;
     } else if (iceState === 1) {
         // Frozen Ice Block - Locked physical dimensions (width & height lock, moves with jumper!)
-        if (frozenBoxW === null || frozenBoxH === null) {
+        const canLockFreshFrozenGeometry =
+            !isCountdownActive &&
+            !isPaused &&
+            !isOutOfFrame &&
+            !requiresPoseTrackerRecalibration &&
+            lostTrackingFrames === 0;
+        if (
+            (frozenBoxW === null || frozenBoxH === null) &&
+            canLockFreshFrozenGeometry
+        ) {
             frozenBoxW = bw;
             frozenBoxH = bh;
         }
-        const fW = frozenBoxW;
-        const fH = frozenBoxH;
+        // During calibration, follow the live pose without committing its size.
+        // The first reliable active frame becomes the new locked geometry.
+        const fW = frozenBoxW ?? bw;
+        const fH = frozenBoxH ?? bh;
         // Center the fixed-size ice block around current jumper position so it moves with the stick figure
         const fX = (xMin + bw / 2) - fW / 2;
         const fY = (yMin + bh / 2) - fH / 2;
@@ -4231,6 +4632,12 @@ doneBtn.addEventListener('click', () => {
     
     boundsWarning.classList.remove("show");
     isOutOfFrame = false;
+    outOfFrameStartedAt = null;
+    calibrationPoseFrames = 0;
+    requiresPoseTrackerRecalibration = false;
+    untrustedPoseFrames = 0;
+    lastTrustedPoseSignature = null;
+    calibrationPoseSignature = null;
     
     cameraActive = false;
     video.pause();
@@ -4402,15 +4809,8 @@ pauseBtn.addEventListener('click', () => {
         statusText.style.display = "block";
         statusText.innerText = "Session Paused";
     } else {
-        // Resume the session
-        isPaused = false;
-        if (!isOutOfFrame) {
-            sessionStartTime = Date.now();
-        }
-        startStreakGracePeriod();
-        pauseBtn.innerText = "Pause Session";
-        pauseBtn.style.background = "#ff9800"; // Back to orange
-        statusText.style.display = "none";
+        // Reacquire the current standing position before counting resumes.
+        startResumeCalibrationCountdown();
     }
 });
 
@@ -4440,7 +4840,18 @@ continueSetBtn.addEventListener('click', () => {
                 activeUI.classList.remove('fade-out');
             });
 
-            if (skipCountdown) {
+            if (requiresPoseTrackerRecalibration) {
+                // Wait behind the out-of-frame guard until a real moving person
+                // enters; a static room object must not start the countdown.
+                isPaused = false;
+                isOutOfFrame = true;
+                outOfFrameStartedAt = outOfFrameStartedAt || Date.now();
+                boundsWarning.classList.add("show");
+                sessionStartTime = Date.now();
+                resetReacquisitionCandidate();
+            } else if (skipCountdown) {
+                resetPoseTrackingCalibration();
+                calibrationPoseFrames = 0;
                 isPaused = false;
                 sessionStartTime = Date.now();
                 startStreakGracePeriod();
@@ -4467,6 +4878,10 @@ restartBtn.addEventListener('click', () => {
     }, 180);
 
     jumpCount = 0;
+    requiresPoseTrackerRecalibration = false;
+    untrustedPoseFrames = 0;
+    lastTrustedPoseSignature = null;
+    calibrationPoseSignature = null;
     baselineY = null;
     isJumping = false;
     jumpTakeoffTime = 0;
