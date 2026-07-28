@@ -144,7 +144,7 @@ canvas {
     50% { transform: rotate(7deg); }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
     .welcome-animation svg {
         width: 100vw;
         height: 72vh;
@@ -916,7 +916,7 @@ input[type="number"]::-webkit-outer-spin-button {
     to { opacity: 1; transform: scale(1) rotate(-2deg); }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
     .monster-challenge {
         top: 10px;
         right: 10px;
@@ -1102,7 +1102,7 @@ input[type="number"]::-webkit-outer-spin-button {
         }
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 700px), (hover: none) and (pointer: coarse) {
         .goal-inputs.flow-settings-inputs {
             width: 100%;
             box-sizing: border-box;
@@ -1219,7 +1219,7 @@ input[type="number"]::-webkit-outer-spin-button {
     display: none;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
     .ui-panel.compact-workout-panel {
         width: 116px !important;
         height: 116px;
@@ -1264,6 +1264,33 @@ input[type="number"]::-webkit-outer-spin-button {
         text-shadow: 0 0 20px rgba(255, 87, 34, 0.65);
     }
 
+    .ui-panel.compact-workout-panel.mobile-config-panel {
+        width: min(360px, calc(100vw - 20px)) !important;
+        height: auto;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        max-height: calc(100dvh - 20px);
+        padding: 16px;
+        border-radius: 18px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background: rgba(20, 20, 20, 0.86);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+    }
+
+    .ui-panel.mobile-config-panel #mid-session-goal-panel {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    .ui-panel.mobile-config-panel #mid-session-goal-panel h2 {
+        margin-bottom: 8px !important;
+        font-size: 20px !important;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
     .ui-panel.compact-workout-panel.mobile-countdown-panel {
         left: 10px;
         transform: none;
@@ -1302,11 +1329,11 @@ input[type="number"]::-webkit-outer-spin-button {
         bottom: max(8px, env(safe-area-inset-bottom));
         z-index: 100;
         align-items: stretch;
-        gap: 6px;
-        padding: 6px;
+        gap: 3px;
+        padding: 3px;
         box-sizing: border-box;
         border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 17px;
+        border-radius: 13px;
         background: rgba(28, 28, 30, 0.82);
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(18px) saturate(1.35);
@@ -1320,14 +1347,14 @@ input[type="number"]::-webkit-outer-spin-button {
     #mobile-workout-nav > button {
         flex: 1 1 0;
         min-width: 0;
-        min-height: 44px;
+        min-height: 34px;
         margin: 0;
-        padding: 8px 5px;
+        padding: 3px 4px;
         border: 0;
-        border-radius: 12px;
+        border-radius: 10px;
         color: #ffffff;
         font-family: 'Inter', sans-serif;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         line-height: 1.15;
         letter-spacing: 0.2px;
@@ -2044,7 +2071,9 @@ let restStartTime = null;
 const QUICK_JUMP_SEQUENCE_TARGET = 5;
 const QUICK_JUMP_MAX_GAP_MS = 1500;
 const COMPACT_UI_IDLE_MS = 5000;
-const MOBILE_WORKOUT_VIEW = window.matchMedia('(max-width: 700px)');
+const MOBILE_WORKOUT_VIEW = window.matchMedia(
+    '(max-width: 700px), (hover: none) and (pointer: coarse)'
+);
 let quickJumpSequence = 0;
 let previousCountedJumpTime = 0;
 let compactUiReturnTimeout = null;
@@ -2121,6 +2150,7 @@ mobileDoneBtn.addEventListener('click', () => {
 
 mobileGoalBtn.addEventListener('click', () => {
     mobileWorkoutNav.classList.remove('show');
+    uiPanel.classList.add('mobile-config-panel');
     document.getElementById('add-goal-btn').click();
 });
 
@@ -4177,6 +4207,7 @@ function closeMidSessionGoalPanel(onComplete) {
     setTimeout(() => {
         midSessionGoalPanel.style.display = "none";
         midSessionGoalPanel.classList.remove('fade-out');
+        uiPanel.classList.remove('mobile-config-panel');
         if (onComplete) {
             onComplete();
         } else {
