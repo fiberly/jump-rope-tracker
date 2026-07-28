@@ -1264,6 +1264,42 @@ input[type="number"]::-webkit-outer-spin-button {
         text-shadow: 0 0 20px rgba(255, 87, 34, 0.65);
     }
 
+    .ui-panel.compact-workout-panel .warning-box {
+        position: fixed;
+        top: 136px;
+        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
+        z-index: 110;
+        width: auto;
+        max-height: 0;
+        margin: 0 !important;
+        padding: 0 14px;
+        box-sizing: border-box;
+        border-radius: 14px;
+        transform: none;
+        background: rgba(220, 20, 20, 0.9);
+        box-shadow: 0 8px 26px rgba(255, 35, 20, 0.48);
+    }
+
+    .ui-panel.compact-workout-panel .warning-box.show {
+        max-height: 100px;
+        margin: 0 !important;
+        padding: 10px 14px;
+    }
+
+    .ui-panel.compact-workout-panel .warning-box h2 {
+        font-size: 20px !important;
+        line-height: 1.1;
+        letter-spacing: 1px !important;
+        white-space: nowrap;
+    }
+
+    .ui-panel.compact-workout-panel .warning-box > div {
+        margin-top: 4px !important;
+        font-size: 12px !important;
+        line-height: 1.25;
+    }
+
     .ui-panel.compact-workout-panel.mobile-config-panel {
         width: min(360px, calc(100vw - 20px)) !important;
         height: auto;
@@ -1289,6 +1325,104 @@ input[type="number"]::-webkit-outer-spin-button {
         font-size: 20px !important;
         line-height: 1.2;
         white-space: nowrap;
+    }
+
+    .ui-panel.compact-workout-panel.mobile-break-panel,
+    .ui-panel.mobile-workout-complete-panel {
+        width: min(360px, calc(100vw - 20px)) !important;
+        height: auto;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        max-height: calc(100dvh - 20px);
+        left: 50%;
+        padding: 16px;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        overflow-y: auto;
+        border-radius: 20px;
+        background: rgba(20, 20, 20, 0.9);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .ui-panel.compact-workout-panel.mobile-break-panel {
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .ui-panel.compact-workout-panel.mobile-break-panel.bump {
+        transform: translate(-50%, -50%);
+    }
+
+    .ui-panel.mobile-break-panel #set-complete-overlay {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .ui-panel.mobile-break-panel #set-complete-overlay > div {
+        width: 100%;
+        padding: 2px !important;
+        box-sizing: border-box;
+    }
+
+    .ui-panel.mobile-break-panel #set-complete-title {
+        margin: 0 0 8px !important;
+        font-size: 24px !important;
+        line-height: 1.1;
+        letter-spacing: 1px !important;
+    }
+
+    .ui-panel.mobile-break-panel #set-complete-progress-text {
+        margin: 0 !important;
+        font-size: 18px !important;
+        line-height: 1.3;
+    }
+
+    .ui-panel.mobile-break-panel #set-complete-progress-text + div {
+        margin: 10px 0 6px !important;
+        font-size: 14px !important;
+        line-height: 1.35;
+    }
+
+    .ui-panel.mobile-break-panel #rest-timer {
+        margin: 4px 0 12px !important;
+        font-size: 40px !important;
+        line-height: 1;
+    }
+
+    .ui-panel.mobile-break-panel #continue-set-btn {
+        width: 100%;
+        margin: 2px 0 0 !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+        border-radius: 12px !important;
+    }
+
+    .ui-panel.mobile-workout-complete-panel {
+        top: 10px;
+        transform: translateX(-50%);
+        padding: 14px;
+    }
+
+    .ui-panel.mobile-workout-complete-panel #stats-panel {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    .ui-panel.mobile-workout-complete-panel #stats-panel > h2 {
+        margin-bottom: 10px !important;
+        font-size: 20px !important;
+        line-height: 1.15;
+    }
+
+    .ui-panel.mobile-workout-complete-panel .stat-item {
+        margin-bottom: 5px !important;
+        line-height: 1.3;
+    }
+
+    .monster-challenge.mobile-break-hidden,
+    .streak-layer.mobile-break-hidden {
+        display: none !important;
     }
 
     .ui-panel.compact-workout-panel.mobile-countdown-panel {
@@ -2972,7 +3106,8 @@ function predictWebcam() {
                     document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
                     document.getElementById('history-panel')?.style.display === "flex" ||
                     document.getElementById('history-detail-panel')?.style.display === "flex" ||
-                    document.getElementById('stats-panel')?.style.display === "flex"
+                    document.getElementById('stats-panel')?.style.display === "flex" ||
+                    document.getElementById('set-complete-overlay')?.style.display === "flex"
                 );
                 if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
                     isOutOfFrame = true;
@@ -3095,7 +3230,8 @@ function drawWireframe(landmarks, w, h) {
         document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
         document.getElementById('history-panel')?.style.display === "flex" ||
         document.getElementById('history-detail-panel')?.style.display === "flex" ||
-        document.getElementById('stats-panel')?.style.display === "flex"
+        document.getElementById('stats-panel')?.style.display === "flex" ||
+        document.getElementById('set-complete-overlay')?.style.display === "flex"
     );
 
     if (currentOutOfFrame && !isOutOfFrame && !isConfigActive) {
@@ -3678,6 +3814,13 @@ function processJumpLogic(landmarks) {
 
 function openOverlay(overlayEl) {
     const activeUI = document.getElementById('active-session-ui');
+    if (overlayEl === setCompleteOverlay && MOBILE_WORKOUT_VIEW.matches) {
+        uiPanel.classList.add('mobile-break-panel');
+        mobileWorkoutNav.classList.remove('show');
+        monsterChallengeEl.classList.add('mobile-break-hidden');
+        streakLayer.classList.add('mobile-break-hidden');
+        boundsWarning.classList.remove('show');
+    }
     activeUI.classList.add('fade-out');
     video.classList.add("blur-background");
     canvas.classList.add("blur-background");
@@ -3700,9 +3843,17 @@ function closeOverlay(overlayEl, returnToActive = true) {
     
     setTimeout(() => {
         overlayEl.style.display = "none";
+        if (overlayEl === setCompleteOverlay) {
+            uiPanel.classList.remove('mobile-break-panel');
+            monsterChallengeEl.classList.remove('mobile-break-hidden');
+            streakLayer.classList.remove('mobile-break-hidden');
+        }
         if (returnToActive) {
             const activeUI = document.getElementById('active-session-ui');
             activeUI.style.display = "flex";
+            if (MOBILE_WORKOUT_VIEW.matches) {
+                setCompactWorkoutUI(true);
+            }
             requestAnimationFrame(() => {
                 activeUI.classList.remove('fade-out');
             });
@@ -3827,6 +3978,9 @@ doneBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
     timerInterval = null;
     mobileWorkoutBarPersistent = false;
+    uiPanel.classList.remove('mobile-break-panel');
+    monsterChallengeEl.classList.remove('mobile-break-hidden');
+    streakLayer.classList.remove('mobile-break-hidden');
     resetCompactWorkoutUI();
     cooldownEndsAt = null;
     cooldownAdvancePending = false;
@@ -3949,6 +4103,9 @@ doneBtn.addEventListener('click', () => {
         activeSessionUI.classList.remove('fade-out');
         historyPanel.style.display = "none";
         historyDetailPanel.style.display = "none";
+        if (MOBILE_WORKOUT_VIEW.matches) {
+            uiPanel.classList.add('mobile-workout-complete-panel');
+        }
         statsPanel.style.display = "flex";
         statsPanel.classList.add('fade-in');
         historyBtn.style.display = "none";
@@ -4068,6 +4225,7 @@ restartBtn.addEventListener('click', () => {
     setTimeout(() => {
         statsPanel.style.display = "none";
         statsPanel.classList.remove('fade-out');
+        uiPanel.classList.remove('mobile-workout-complete-panel');
         historyPanel.style.display = "none";
         historyDetailPanel.style.display = "none";
         activeSessionUI.style.display = "flex";
