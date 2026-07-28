@@ -2208,7 +2208,10 @@ const COMPACT_UI_IDLE_MS = 5000;
 const MOBILE_WORKOUT_VIEW = window.matchMedia(
     '(max-width: 700px), (hover: none) and (pointer: coarse)'
 );
-const MOBILE_INFERENCE_INTERVAL_MS = 45;
+const MOBILE_INFERENCE_INTERVAL_MS = 62;
+const MOBILE_MIN_COOLING_GAP_MS = 20;
+const MOBILE_RENDER_EVERY_N_INFERENCES = 2;
+let mobileInferenceCount = 0;
 
 function getCameraVideoConstraints() {
     if (MOBILE_WORKOUT_VIEW.matches) {
@@ -2216,7 +2219,7 @@ function getCameraVideoConstraints() {
             facingMode: "user",
             width: { ideal: 640, max: 960 },
             height: { ideal: 480, max: 720 },
-            frameRate: { ideal: 24, max: 24 }
+            frameRate: { ideal: 20, max: 20 }
         };
     }
 
@@ -2506,18 +2509,23 @@ const POSE_CONNECTIONS = [
 
 // Initialize MediaPipe Tasks
 async function initializeModel() {
+    const mobileModelPath = "./pose_landmarker_lite.task";
+    const desktopModelPath = "./pose_landmarker_full.task";
+    const modelPath = MOBILE_WORKOUT_VIEW.matches ? mobileModelPath : desktopModelPath;
+    const mobileConfidence = MOBILE_WORKOUT_VIEW.matches ? 0.45 : 0.5;
+
     try {
         // Stage 1: Try local WASM + local model
         const vision = await FilesetResolver.forVisionTasks("./wasm");
         poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
             baseOptions: {
-                modelAssetPath: "./pose_landmarker_full.task",
+                modelAssetPath: modelPath,
                 delegate: "CPU"
             },
             runningMode: runningMode,
-            minPoseDetectionConfidence: 0.5,
-            minPosePresenceConfidence: 0.5,
-            minTrackingConfidence: 0.5
+            minPoseDetectionConfidence: mobileConfidence,
+            minPosePresenceConfidence: mobileConfidence,
+            minTrackingConfidence: mobileConfidence
         });
         console.log("Loaded MediaPipe model locally!");
     } catch (localErr) {
@@ -2527,13 +2535,15 @@ async function initializeModel() {
             const visionCDN = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/wasm");
             poseLandmarker = await PoseLandmarker.createFromOptions(visionCDN, {
                 baseOptions: {
-                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
+                    modelAssetPath: MOBILE_WORKOUT_VIEW.matches
+                        ? "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task"
+                        : "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
                     delegate: "CPU"
                 },
                 runningMode: runningMode,
-                minPoseDetectionConfidence: 0.5,
-                minPosePresenceConfidence: 0.5,
-                minTrackingConfidence: 0.5
+                minPoseDetectionConfidence: mobileConfidence,
+                minPosePresenceConfidence: mobileConfidence,
+                minTrackingConfidence: mobileConfidence
             });
             console.log("Loaded MediaPipe model from CDN!");
         } catch (cdnErr) {
@@ -2680,7 +2690,7 @@ startBtn.addEventListener('click', async () => {
             console.warn("Fallback to generic video constraint:", camErr);
             stream = await navigator.mediaDevices.getUserMedia({
                 video: MOBILE_WORKOUT_VIEW.matches
-                    ? { facingMode: "user", frameRate: { ideal: 20, max: 24 } }
+                    ? { facingMode: "user", frameRate: { ideal: 20, max: 20 } }
                     : true
             });
         }
@@ -3085,6 +3095,8 @@ function damageMonsterForCurrentJump() {
 function startPredictionLoop() {
     if (predictionLoopActive) return;
     predictionLoopActive = true;
+    lastVideoTime = -1;
+    mobileInferenceCount = 0;
     predictWebcam();
 }
 
@@ -3093,9 +3105,9 @@ function scheduleNextPrediction(frameStartedAt) {
 
     if (MOBILE_WORKOUT_VIEW.matches) {
         const frameWorkMs = performance.now() - frameStartedAt;
-        // Preserve a short cooling gap even after a slow inference. This naturally
+        // Preserve a meaningful cooling gap even after a slow inference. This naturally
         // lowers the frame rate as a phone warms up instead of building a queue.
-        delayMs = Math.max(12, MOBILE_INFERENCE_INTERVAL_MS - frameWorkMs);
+        delayMs = Math.max(MOBILE_MIN_COOLING_GAP_MS, MOBILE_INFERENCE_INTERVAL_MS - frameWorkMs);
     }
 
     setTimeout(predictWebcam, delayMs);
@@ -3119,19 +3131,34 @@ function predictWebcam() {
         return;
     }
 
+    // Safari can present the same camera frame across multiple timer callbacks.
+    // Never spend another inference on a frame that has already been processed.
+    if (video.currentTime === lastVideoTime) {
+        setTimeout(predictWebcam, MOBILE_WORKOUT_VIEW.matches ? MOBILE_MIN_COOLING_GAP_MS : 16);
+        return;
+    }
+    lastVideoTime = video.currentTime;
+
     resizeCanvas();
     
     const startTimeMs = performance.now();
     try {
         poseLandmarker.detectForVideo(video, startTimeMs, (result) => {
             try {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const shouldRenderFrame = !MOBILE_WORKOUT_VIEW.matches ||
+                    (++mobileInferenceCount % MOBILE_RENDER_EVERY_N_INFERENCES === 0);
                 
                 if (result.landmarks && result.landmarks.length > 0) {
                     const landmarks = result.landmarks[0];
-                    drawWireframe(landmarks, canvas.width, canvas.height);
+                    if (shouldRenderFrame) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        drawWireframe(landmarks, canvas.width, canvas.height);
+                    }
                     processStableJumpLogic(landmarks);
                 } else {
+                    if (shouldRenderFrame) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
                     baselineY = null;
                     baselineTorsoHeight = null;
                     isJumping = false;
