@@ -3911,147 +3911,9 @@ function drawWireframe(landmarks, w, h) {
     }
 }
 
-// Desktop detector preserved from the user's known-good 0726 1239 backup.
-// Keep it separate so mobile thermal/cadence tuning cannot change desktop behavior.
-function processBackupDesktopJumpLogic(landmarks) {
-    if (isOutOfFrame) return;
-
-    const leftShoulder = landmarks[11];
-    const rightShoulder = landmarks[12];
-    const leftHip = landmarks[23];
-    const rightHip = landmarks[24];
-    const nose = landmarks[0];
-
-    const isOnScreen = (point) => point &&
-        Number.isFinite(point.x) && Number.isFinite(point.y) &&
-        point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1;
-
-    if (!isOnScreen(leftShoulder) || !isOnScreen(rightShoulder)) {
-        lostTrackingFrames++;
-        if (lostTrackingFrames > 10) {
-            baselineY = null;
-            stableTrackerY = null;
-            stableBodyScale = null;
-            stableTrackingMode = null;
-            stableJumpPhase = "grounded";
-        }
-        return;
-    }
-    lostTrackingFrames = 0;
-
-    const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-    const shouldersWidth = Math.abs(leftShoulder.x - rightShoulder.x);
-    const hipsTrackable = isOnScreen(leftHip) && isOnScreen(rightHip);
-    const trackingMode = hipsTrackable ? "hips" : "upper-body";
-
-    let rawTrackerY;
-    let rawBodyScale;
-    if (hipsTrackable) {
-        const hipY = (leftHip.y + rightHip.y) / 2;
-        rawTrackerY = hipY;
-        rawBodyScale = Math.max(Math.abs(hipY - shoulderY), 0.04);
-    } else {
-        rawTrackerY = shoulderY;
-        const headToShoulders = isOnScreen(nose) ? Math.abs(shoulderY - nose.y) * 2 : 0;
-        rawBodyScale = Math.max(headToShoulders, shouldersWidth, 0.06);
-    }
-
-    if (stableTrackingMode !== trackingMode || stableTrackerY === null || stableBodyScale === null || baselineY === null) {
-        stableTrackingMode = trackingMode;
-        stableTrackerY = rawTrackerY;
-        stableBodyScale = rawBodyScale;
-        baselineY = rawTrackerY;
-        baselineTorsoHeight = rawBodyScale;
-        stableJumpPhase = "grounded";
-        stableTakeoffFrames = 0;
-        stableLandingFrames = 0;
-        stableJumpPeak = 0;
-        stableJumpStartedAt = 0;
-        return;
-    }
-
-    stableTrackerY = stableTrackerY * 0.55 + rawTrackerY * 0.45;
-    stableBodyScale = stableBodyScale * 0.80 + rawBodyScale * 0.20;
-    baselineTorsoHeight = stableBodyScale;
-
-    if (isPaused || isCountdownActive) {
-        baselineY = baselineY * 0.88 + stableTrackerY * 0.12;
-        stableJumpPhase = "grounded";
-        stableTakeoffFrames = 0;
-        stableLandingFrames = 0;
-        stableJumpPeak = 0;
-        stableJumpStartedAt = 0;
-        return;
-    }
-
-    const now = Date.now();
-    const heightUnits = (baselineY - stableTrackerY) / Math.max(stableBodyScale, 0.04);
-    const takeoffThreshold = trackingMode === "hips" ? 0.105 : 0.13;
-    const strongTakeoffThreshold = takeoffThreshold * 1.55;
-    const landingThreshold = takeoffThreshold * 0.35;
-
-    if (stableJumpPhase === "grounded") {
-        if (Math.abs(heightUnits) < takeoffThreshold * 0.55) {
-            baselineY = baselineY * 0.985 + stableTrackerY * 0.015;
-        }
-
-        if (heightUnits >= takeoffThreshold) {
-            stableTakeoffFrames++;
-        } else {
-            stableTakeoffFrames = 0;
-        }
-
-        if (stableTakeoffFrames >= 2 || heightUnits >= strongTakeoffThreshold) {
-            stableJumpPhase = "airborne";
-            stableJumpStartedAt = now;
-            stableJumpPeak = heightUnits;
-            stableLandingFrames = 0;
-            stableTakeoffFrames = 0;
-        }
-    } else {
-        stableJumpPeak = Math.max(stableJumpPeak, heightUnits);
-
-        if (heightUnits <= landingThreshold) {
-            stableLandingFrames++;
-        } else {
-            stableLandingFrames = 0;
-        }
-
-        const strongLanding = heightUnits <= 0;
-        if (stableLandingFrames >= 2 || strongLanding) {
-            const airborneMs = now - stableJumpStartedAt;
-            const hasValidShape = airborneMs >= 45 && stableJumpPeak >= takeoffThreshold * 1.05;
-            const outsideCountDebounce = lastConfirmedJumpTime === 0 || now - lastConfirmedJumpTime >= 300;
-
-            if (hasValidShape && outsideCountDebounce) {
-                jumpCount++;
-                updateUI();
-                lastConfirmedJumpTime = now;
-                lastJumpTime = now;
-                registerCountedJumpForCompactUI(now);
-                registerJumpAgainstIce(now);
-            }
-
-            stableJumpPhase = "grounded";
-            stableLandingFrames = 0;
-            stableTakeoffFrames = 0;
-            stableJumpPeak = 0;
-            stableJumpStartedAt = 0;
-        }
-    }
-
-    refreezeIceAfterInactivity(now, stableJumpPhase === "grounded");
-}
-
 function processStableJumpLogic(landmarks) {
-    if (!MOBILE_WORKOUT_VIEW.matches) {
-        processBackupDesktopJumpLogic(landmarks);
-        return;
-    }
-
     if (isOutOfFrame) return;
 
-    const isMobileTracking = MOBILE_WORKOUT_VIEW.matches;
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
     const leftHip = landmarks[23];
@@ -4107,9 +3969,8 @@ function processStableJumpLogic(landmarks) {
         return;
     }
 
-    // Phones need a faster response because quick jumps may only span a few camera frames.
-    const trackerHistoryWeight = isMobileTracking ? 0.25 : 0.55;
-    stableTrackerY = stableTrackerY * trackerHistoryWeight + rawTrackerY * (1 - trackerHistoryWeight);
+    // Smooth landmark jitter while retaining enough response for fast rope cadence.
+    stableTrackerY = stableTrackerY * 0.55 + rawTrackerY * 0.45;
     stableBodyScale = stableBodyScale * 0.80 + rawBodyScale * 0.20;
     baselineTorsoHeight = stableBodyScale;
 
@@ -4125,13 +3986,9 @@ function processStableJumpLogic(landmarks) {
 
     const now = Date.now();
     const heightUnits = (baselineY - stableTrackerY) / Math.max(stableBodyScale, 0.04);
-    const takeoffThreshold = trackingMode === "hips"
-        ? (isMobileTracking ? 0.095 : 0.105)
-        : (isMobileTracking ? 0.115 : 0.13);
+    const takeoffThreshold = trackingMode === "hips" ? 0.105 : 0.13;
     const strongTakeoffThreshold = takeoffThreshold * 1.55;
-    const landingThreshold = takeoffThreshold * (isMobileTracking ? 0.72 : 0.35);
-    const takeoffFramesRequired = isMobileTracking ? 1 : 2;
-    const landingFramesRequired = isMobileTracking ? 1 : 2;
+    const landingThreshold = takeoffThreshold * 0.35;
 
     if (stableJumpPhase === "grounded") {
         // Adapt only while close to the standing baseline; never chase a body upward.
@@ -4145,9 +4002,8 @@ function processStableJumpLogic(landmarks) {
             stableTakeoffFrames = 0;
         }
 
-        // Mobile camera frames are sparse during quick rope cadence, so a clean
-        // threshold crossing is enough there; desktop retains two-frame confirmation.
-        if (stableTakeoffFrames >= takeoffFramesRequired || heightUnits >= strongTakeoffThreshold) {
+        // Two ordinary takeoff frames, or one unmistakably strong frame, starts a jump.
+        if (stableTakeoffFrames >= 2 || heightUnits >= strongTakeoffThreshold) {
             stableJumpPhase = "airborne";
             stableJumpStartedAt = now;
             stableJumpPeak = heightUnits;
@@ -4156,7 +4012,6 @@ function processStableJumpLogic(landmarks) {
         }
     } else {
         stableJumpPeak = Math.max(stableJumpPeak, heightUnits);
-        const airborneMs = now - stableJumpStartedAt;
 
         if (heightUnits <= landingThreshold) {
             stableLandingFrames++;
@@ -4166,16 +4021,10 @@ function processStableJumpLogic(landmarks) {
 
         // Require a clear return to baseline. This closes one jump cycle exactly once.
         const strongLanding = heightUnits <= 0;
-        if (stableLandingFrames >= landingFramesRequired || strongLanding) {
-            const minimumAirborneMs = isMobileTracking ? 35 : 45;
-            const minimumPeakScale = isMobileTracking ? 1.0 : 1.05;
-            const countDebounceMs = isMobileTracking ? 180 : 300;
-            const hasValidShape =
-                airborneMs >= minimumAirborneMs &&
-                stableJumpPeak >= takeoffThreshold * minimumPeakScale;
-            const outsideCountDebounce =
-                lastConfirmedJumpTime === 0 ||
-                now - lastConfirmedJumpTime >= countDebounceMs;
+        if (stableLandingFrames >= 2 || strongLanding) {
+            const airborneMs = now - stableJumpStartedAt;
+            const hasValidShape = airborneMs >= 45 && stableJumpPeak >= takeoffThreshold * 1.05;
+            const outsideCountDebounce = lastConfirmedJumpTime === 0 || now - lastConfirmedJumpTime >= 300;
 
             if (hasValidShape && outsideCountDebounce) {
                 jumpCount++;
@@ -4191,15 +4040,6 @@ function processStableJumpLogic(landmarks) {
             stableTakeoffFrames = 0;
             stableJumpPeak = 0;
             stableJumpStartedAt = 0;
-        } else if (isMobileTracking && airborneMs > 650) {
-            // Recover promptly if a throttled or blurred frame hid the landing.
-            // Without this guard, the detector can stay airborne and miss several jumps.
-            stableJumpPhase = "grounded";
-            stableLandingFrames = 0;
-            stableTakeoffFrames = 0;
-            stableJumpPeak = 0;
-            stableJumpStartedAt = 0;
-            baselineY = baselineY * 0.75 + stableTrackerY * 0.25;
         }
     }
 
