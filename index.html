@@ -1248,6 +1248,21 @@ input[type="number"]::-webkit-outer-spin-button {
     display: none !important;
 }
 
+/* The setup controls are hidden in JavaScript after the camera starts, but iOS
+   can paint an intermediate frame while permission/video promises settle. Keep
+   them out of the compact workout shell by state as well, so they can never
+   overflow the 116px counter card. */
+#active-session-ui.compact-workout-ui > #app-title,
+#active-session-ui.compact-workout-ui > #welcome-title,
+#active-session-ui.compact-workout-ui > #name-input-row,
+#active-session-ui.compact-workout-ui > #weight-input-row,
+#active-session-ui.compact-workout-ui > #goal-settings,
+#active-session-ui.compact-workout-ui > #start-btn,
+#active-session-ui.compact-workout-ui > #history-btn,
+#active-session-ui.compact-workout-ui > #camera-loading-box {
+    display: none !important;
+}
+
 #mobile-workout-nav {
     display: none;
 }
@@ -2828,16 +2843,26 @@ function getHumanPoseGuardSignature(landmarks, strict = false) {
     const nose = landmarks[0];
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
-    if (![nose, leftShoulder, rightShoulder].every(isLandmarkInFrame)) return null;
+    if (![leftShoulder, rightShoulder].every(isLandmarkInFrame)) return null;
 
     const faceConfidenceFloor = strict ? 0.28 : 0.08;
     const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-    if (
-        getLandmarkConfidence(nose) < faceConfidenceFloor ||
-        nose.y >= shoulderY - 0.01
-    ) {
-        return null;
-    }
+    const faceLooksHuman = isLandmarkInFrame(nose) &&
+        getLandmarkConfidence(nose) >= faceConfidenceFloor &&
+        nose.y < shoulderY - 0.01;
+
+    // Front-facing phone cameras commonly lose face confidence because of
+    // motion blur, backlighting, or the top edge of a portrait crop. A stable
+    // shoulder-to-hip torso is equally useful evidence that this is the jumper;
+    // requiring the nose as well caused valid mobile poses to be rejected.
+    const torso = getPoseGuardTorsoMeasurement(landmarks);
+    const torsoLooksHuman = Boolean(
+        torso &&
+        torso.torsoHeight >= 0.04 &&
+        torso.torsoHeight <= 0.65 &&
+        torso.horizontalLean <= Math.max(torso.torsoHeight * 1.2, 0.16)
+    );
+    if (!faceLooksHuman && !torsoLooksHuman) return null;
 
     // Require evidence on both sides of the body. False poses on round or hanging
     // objects commonly collapse all of their confident joints onto one side.
@@ -3212,6 +3237,7 @@ startBtn.addEventListener('click', async () => {
         document.getElementById('welcome-animation'),
         document.getElementById('app-title'),
         document.getElementById('welcome-title'),
+        document.getElementById('name-input-row'),
         document.getElementById('weight-input-row'),
         goalSettings,
         startBtn,
@@ -3685,7 +3711,21 @@ function scheduleNextPrediction(frameStartedAt) {
     setTimeout(predictWebcam, delayMs);
 }
 
-function handleUntrustedPoseFrame() {
+function hasVisibleTrackingAnchors(landmarks) {
+    if (!landmarks) return false;
+
+    const shouldersVisible = [11, 12].every(index =>
+        isLandmarkInFrame(landmarks[index]) &&
+        getLandmarkConfidence(landmarks[index]) >= 0.04
+    );
+    if (!shouldersVisible) return false;
+
+    const hipsVisible = [23, 24].every(index => isLandmarkInFrame(landmarks[index]));
+    const headVisible = isLandmarkInFrame(landmarks[0]);
+    return hipsVisible || headVisible;
+}
+
+function handleUntrustedPoseFrame(hasVisiblePose = false) {
     baselineY = null;
     baselineTorsoHeight = null;
     suppressJumpForPoseGuard();
@@ -3697,7 +3737,14 @@ function handleUntrustedPoseFrame() {
         document.getElementById('history-detail-panel')?.style.display === "flex" ||
         document.getElementById('stats-panel')?.style.display === "flex"
     );
-    if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
+    if (
+        !hasVisiblePose &&
+        lostTrackingFrames > 10 &&
+        !isOutOfFrame &&
+        !isConfigActive &&
+        cameraActive &&
+        !isCountdownActive
+    ) {
         isOutOfFrame = true;
         boundsWarning.classList.add("show");
         if (!isPaused) {
@@ -3751,7 +3798,10 @@ function predictWebcam() {
                 if (poseValidation.allowCounting) {
                     processJumpLogic(landmarks);
                 } else if (!poseValidation.isHuman) {
-                    handleUntrustedPoseFrame();
+                    // A visible pose may be temporarily unsuitable for counting
+                    // without actually being outside the camera frame. Keep the
+                    // warning reserved for missing/off-screen tracking anchors.
+                    handleUntrustedPoseFrame(hasVisibleTrackingAnchors(landmarks));
                 }
             } else {
                 handleUntrustedPoseFrame();
