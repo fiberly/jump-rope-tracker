@@ -2282,24 +2282,22 @@ const COMPACT_UI_IDLE_MS = 5000;
 const MOBILE_WORKOUT_VIEW = window.matchMedia(
     '(max-width: 700px), (hover: none) and (pointer: coarse)'
 );
-const MOBILE_INFERENCE_INTERVAL_MS = 50;
-const MOBILE_MIN_COOLING_GAP_MS = 16;
-const MOBILE_RENDER_EVERY_N_INFERENCES = 2;
+const MOBILE_INFERENCE_INTERVAL_MS = 33;
+const MOBILE_MIN_COOLING_GAP_MS = 8;
 const DESKTOP_INFERENCE_INTERVAL_MS = 33;
 const RESUME_CALIBRATION_COUNTDOWN_SECONDS = 5;
 const CALIBRATION_POSE_FRAMES_REQUIRED = 8;
 const REACQUISITION_MOTION_FRAMES_REQUIRED = 6;
 const REACQUISITION_CENTER_MOVEMENT_REQUIRED = 0.055;
 const REACQUISITION_SCALE_CHANGE_REQUIRED = 0.18;
-let mobileInferenceCount = 0;
 
 function getCameraVideoConstraints() {
     if (MOBILE_WORKOUT_VIEW.matches) {
         return {
-            facingMode: "user",
-            width: { ideal: 640, max: 960 },
-            height: { ideal: 480, max: 720 },
-            frameRate: { ideal: 20, max: 20 }
+            facingMode: { ideal: "user" },
+            width: { ideal: 1280, max: 1280 },
+            height: { ideal: 720, max: 720 },
+            frameRate: { ideal: 30, max: 30 }
         };
     }
 
@@ -3251,7 +3249,12 @@ startBtn.addEventListener('click', async () => {
             console.warn("Fallback to generic video constraint:", camErr);
             stream = await navigator.mediaDevices.getUserMedia({
                 video: MOBILE_WORKOUT_VIEW.matches
-                    ? { facingMode: "user", frameRate: { ideal: 20, max: 20 } }
+                    ? {
+                        facingMode: { ideal: "user" },
+                        width: { ideal: 960 },
+                        height: { ideal: 540 },
+                        frameRate: { ideal: 30, max: 30 }
+                    }
                     : true
             });
         }
@@ -3661,7 +3664,6 @@ function startPredictionLoop() {
     if (predictionLoopActive) return;
     predictionLoopActive = true;
     lastVideoTime = -1;
-    mobileInferenceCount = 0;
     predictWebcam();
 }
 
@@ -3722,6 +3724,15 @@ function predictWebcam() {
         return;
     }
 
+    // Camera frames often arrive more slowly than JavaScript timers on phones.
+    // Running MediaPipe twice against the same frame wastes thermal headroom and
+    // can make duplicate landmark samples look like real motion.
+    if (video.currentTime === lastVideoTime) {
+        setTimeout(predictWebcam, MOBILE_WORKOUT_VIEW.matches ? 8 : 4);
+        return;
+    }
+    lastVideoTime = video.currentTime;
+
     resizeCanvas();
     
     let startTimeMs = performance.now();
@@ -3748,8 +3759,9 @@ function predictWebcam() {
         console.warn("Pose detection frame skipped:", detectErr);
     }
     
-    // Use setTimeout instead of requestAnimationFrame so tracking doesn't stall when the window loses focus
-    setTimeout(predictWebcam, 33);
+    // Use the measured inference cost to preserve camera cadence without creating
+    // a backlog as a phone warms up during a long workout.
+    scheduleNextPrediction(startTimeMs);
 }
 
 function spawnIceParticles(x, y, bw, bh) {
