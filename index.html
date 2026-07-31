@@ -460,6 +460,39 @@ canvas {
     gap: 10px;
 }
 
+.weigh-in-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.weigh-in-row label {
+    white-space: nowrap;
+}
+
+.weigh-in-row input {
+    min-width: 0;
+    flex: 1;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    text-align: center;
+}
+
+.weigh-in-row input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
 .goal-toggle-wrapper {
     display: flex;
     align-items: center;
@@ -1707,6 +1740,11 @@ input[type="number"]::-webkit-outer-spin-button {
                 <label for="jumper-name-input" style="font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 600; white-space: nowrap;">Enter Name:</label>
                 <input type="text" id="jumper-name-input" placeholder="Your name" maxlength="30" style="flex: 1; padding: 6px 10px; font-size: 13px; font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #ffffff; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; box-sizing: border-box;">
             </div>
+            <div id="weight-input-row" class="weigh-in-row" style="margin-bottom: 8px;">
+                <label for="weight-input">Optional weigh-in:</label>
+                <input type="number" id="weight-input" inputmode="decimal" min="30" max="700" step="0.1" placeholder="Body weight" aria-describedby="weight-unit">
+                <span id="weight-unit">lb</span>
+            </div>
             <h1 id="jumps-header" class="title" style="display: none;">JUMPS</h1>
             <div id="jump-count" class="counter" style="display: none;">0</div>
             <div id="set-progress" class="set-progress" style="display: none;">Set 1 / 15</div>
@@ -1905,6 +1943,10 @@ input[type="number"]::-webkit-outer-spin-button {
                         <span class="stat-label">Est. Calories Burned:</span>
                         <span id="detail-calories" class="stat-value" style="color: #ffeb3b; font-weight: bold;">0 kcal</span>
                     </div>
+                    <div id="detail-weight-row" class="stat-item" style="display: none; font-size: 13px; margin-bottom: 4px;">
+                        <span class="stat-label">Weigh-in:</span>
+                        <span id="detail-weight" class="stat-value" style="color: #80deea; font-weight: bold;">—</span>
+                    </div>
                 </div>
                 <button id="delete-session-btn" class="btn-action-base btn-danger" style="margin-top: 10px; width: 100%;">Delete Session</button>
             </div>
@@ -1954,9 +1996,18 @@ input[type="number"]::-webkit-outer-spin-button {
                         <span class="stat-label">Est. Calories Burned:</span>
                         <span id="stat-calories" class="stat-value" style="color: #ffeb3b; font-weight: bold;">0 kcal</span>
                     </div>
+                    <div id="stat-weight-row" class="stat-item" style="display: none; font-size: 13px; margin-bottom: 4px; color: rgba(255, 255, 255, 0.9);">
+                        <span class="stat-label">Weigh-in:</span>
+                        <span id="stat-weight" class="stat-value" style="color: #80deea; font-weight: bold;">—</span>
+                    </div>
                 </div>
                 
                 <div id="restart-goal-settings" class="goal-settings" style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; width: 100%;">
+                    <div class="weigh-in-row">
+                        <label for="restart-weight-input">Optional next weigh-in:</label>
+                        <input type="number" id="restart-weight-input" inputmode="decimal" min="30" max="700" step="0.1" placeholder="Body weight">
+                        <span>lb</span>
+                    </div>
                     <div class="goal-toggle-wrapper">
                         <span>Set Jump Rope Goal</span>
                         <label class="switch">
@@ -2073,6 +2124,8 @@ const statSpeed = document.getElementById('stat-speed');
 const statDist = document.getElementById('stat-dist');
 const restartBtn = document.getElementById('restart-btn');
 const startBtn = document.getElementById('start-btn');
+const weightInput = document.getElementById('weight-input');
+const restartWeightInput = document.getElementById('restart-weight-input');
 const statusText = document.getElementById('status');
 const uiPanel = document.querySelector('.ui-panel');
 const mobileWorkoutNav = document.getElementById('mobile-workout-nav');
@@ -2178,6 +2231,9 @@ let reacquisitionCandidateOrigin = null;
 let reacquisitionCandidateFrames = 0;
 let reacquisitionCandidateMaxMovement = 0;
 let reacquisitionCandidateMaxScaleChange = 0;
+let poseGuardUprightTorsoHeight = null;
+let poseGuardCrouchActive = false;
+let poseGuardRecoveryFrames = 0;
 let lostTrackingFrames = 0;
 let depthChangeFrames = 0;
 let currentStreak = 0;
@@ -2204,6 +2260,12 @@ let stableTakeoffFrames = 0;
 let stableLandingFrames = 0;
 let stableJumpPeak = 0;
 let stableJumpStartedAt = 0;
+
+// Camera-normalized anchor for the green jump zone. It is calibrated while the
+// countdown is visible, then locked for the active set so airborne foot
+// landmarks cannot gradually pull the apparent ground backward.
+let groundGuideAnchorX = null;
+let groundGuideAnchorY = null;
 
 let totalSessionStartTime = null;
 let totalSessionPauseOffset = 0;
@@ -2431,6 +2493,42 @@ let currentSet = 1;
 let skipBreaks = false;
 let skipCountdown = false;
 let manualBreaks = false;
+let sessionWeightLb = null;
+
+const LAST_WEIGHT_STORAGE_KEY = 'jr_last_weight_lb';
+const CALORIE_REFERENCE_WEIGHT_LB = 160;
+
+function readOptionalWeight(input) {
+    const rawValue = input.value.trim();
+    if (rawValue === '') return null;
+
+    const weight = Number(rawValue);
+    return Number.isFinite(weight) && weight >= 30 && weight <= 700
+        ? Math.round(weight * 10) / 10
+        : null;
+}
+
+function setSessionWeightFrom(input, pairedInput) {
+    sessionWeightLb = readOptionalWeight(input);
+    if (sessionWeightLb === null) {
+        localStorage.removeItem(LAST_WEIGHT_STORAGE_KEY);
+        input.value = '';
+        pairedInput.value = '';
+        return;
+    }
+
+    const formattedWeight = String(sessionWeightLb);
+    input.value = formattedWeight;
+    pairedInput.value = formattedWeight;
+    localStorage.setItem(LAST_WEIGHT_STORAGE_KEY, formattedWeight);
+}
+
+function calculateEstimatedCalories(jumps, weightLb) {
+    const weightMultiplier = weightLb === null
+        ? 1
+        : weightLb / CALORIE_REFERENCE_WEIGHT_LB;
+    return Math.round(jumps * 0.10 * weightMultiplier * 10) / 10;
+}
 
 // Goal Toggle Logic
 goalToggle.addEventListener('change', (e) => {
@@ -2725,6 +2823,165 @@ function isTrustedPoseContinuity(signature, calibration = false) {
     );
 }
 
+function getHumanPoseGuardSignature(landmarks, strict = false) {
+    const signature = getTrustedPoseSignature(landmarks, strict);
+    if (!signature) return null;
+
+    const nose = landmarks[0];
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    if (![nose, leftShoulder, rightShoulder].every(isLandmarkInFrame)) return null;
+
+    const faceConfidenceFloor = strict ? 0.28 : 0.08;
+    const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+    if (
+        getLandmarkConfidence(nose) < faceConfidenceFloor ||
+        nose.y >= shoulderY - 0.01
+    ) {
+        return null;
+    }
+
+    // Require evidence on both sides of the body. False poses on round or hanging
+    // objects commonly collapse all of their confident joints onto one side.
+    const limbConfidenceFloor = strict ? 0.20 : 0.06;
+    const hasLeftSide = [13, 15, 25, 27].some(index =>
+        isLandmarkInFrame(landmarks[index]) &&
+        getLandmarkConfidence(landmarks[index]) >= limbConfidenceFloor
+    );
+    const hasRightSide = [14, 16, 26, 28].some(index =>
+        isLandmarkInFrame(landmarks[index]) &&
+        getLandmarkConfidence(landmarks[index]) >= limbConfidenceFloor
+    );
+
+    return hasLeftSide && hasRightSide ? signature : null;
+}
+
+function getPoseGuardTorsoMeasurement(landmarks) {
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+    if (![leftShoulder, rightShoulder, leftHip, rightHip].every(isLandmarkInFrame)) {
+        return null;
+    }
+
+    const hipConfidence = Math.min(
+        getLandmarkConfidence(leftHip),
+        getLandmarkConfidence(rightHip)
+    );
+    if (hipConfidence < 0.08) return null;
+
+    const shoulderX = (leftShoulder.x + rightShoulder.x) / 2;
+    const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+    const hipX = (leftHip.x + rightHip.x) / 2;
+    const hipY = (leftHip.y + rightHip.y) / 2;
+    const torsoHeight = hipY - shoulderY;
+    if (torsoHeight <= 0) return null;
+
+    return {
+        centerY: (shoulderY + hipY) / 2,
+        torsoHeight,
+        horizontalLean: Math.abs(shoulderX - hipX)
+    };
+}
+
+function suppressJumpForPoseGuard() {
+    isJumping = false;
+    jumpFrames = 0;
+    jumpTakeoffTime = 0;
+    jumpPeakDisplacement = 0;
+    isLandingUncrouch = false;
+    landingGroundedFrames = 0;
+}
+
+function evaluatePoseForJumpTracking(landmarks) {
+    const strictSignature = getHumanPoseGuardSignature(landmarks, true);
+    const signature = strictSignature || getHumanPoseGuardSignature(landmarks, false);
+    if (!signature || (isCountdownActive && !strictSignature)) {
+        untrustedPoseFrames++;
+        if (untrustedPoseFrames >= 2) suppressJumpForPoseGuard();
+        return { isHuman: false, allowCounting: false };
+    }
+
+    const hasContinuity = isTrustedPoseContinuity(
+        signature,
+        isCountdownActive
+    );
+
+    // After a sustained loss, a different pose-shaped region must demonstrate
+    // real movement before it can replace the previously tracked person.
+    if (lostTrackingFrames > 10 && !hasContinuity) {
+        if (!strictSignature || !recordReacquisitionCandidate(strictSignature)) {
+            untrustedPoseFrames++;
+            suppressJumpForPoseGuard();
+            return { isHuman: false, allowCounting: false };
+        }
+        baselineY = null;
+        baselineTorsoHeight = null;
+        resetReacquisitionCandidate();
+    } else if (!hasContinuity) {
+        untrustedPoseFrames++;
+        if (untrustedPoseFrames >= 2) suppressJumpForPoseGuard();
+        return { isHuman: false, allowCounting: false };
+    }
+
+    untrustedPoseFrames = 0;
+    lostTrackingFrames = 0;
+    lastTrustedPoseSignature = signature;
+    resetReacquisitionCandidate();
+
+    const torso = getPoseGuardTorsoMeasurement(landmarks);
+    if (isCountdownActive || isPaused) {
+        if (torso) {
+            poseGuardUprightTorsoHeight = poseGuardUprightTorsoHeight === null
+                ? torso.torsoHeight
+                : poseGuardUprightTorsoHeight * 0.90 + torso.torsoHeight * 0.10;
+        }
+        calibrationPoseFrames++;
+        calibrationPoseSignature = signature;
+        poseGuardCrouchActive = false;
+        poseGuardRecoveryFrames = 0;
+        return { isHuman: true, allowCounting: true };
+    }
+
+    if (torso && poseGuardUprightTorsoHeight !== null) {
+        const torsoCompressed = torso.torsoHeight < poseGuardUprightTorsoHeight * 0.65;
+        const torsoLeaning = torso.horizontalLean > Math.max(
+            poseGuardUprightTorsoHeight * 0.72,
+            0.045
+        );
+        const deepDownwardMotion = baselineY !== null &&
+            torso.centerY > baselineY + Math.max(poseGuardUprightTorsoHeight * 0.22, 0.025);
+
+        if (torsoCompressed || torsoLeaning || deepDownwardMotion) {
+            poseGuardCrouchActive = true;
+            poseGuardRecoveryFrames = 0;
+            suppressJumpForPoseGuard();
+            return { isHuman: true, allowCounting: false };
+        }
+
+        if (poseGuardCrouchActive) {
+            const returnedUpright = torso.torsoHeight >= poseGuardUprightTorsoHeight * 0.82 &&
+                (baselineY === null || torso.centerY <= baselineY + 0.015);
+            poseGuardRecoveryFrames = returnedUpright ? poseGuardRecoveryFrames + 1 : 0;
+            suppressJumpForPoseGuard();
+            if (poseGuardRecoveryFrames < 3) {
+                return { isHuman: true, allowCounting: false };
+            }
+            poseGuardCrouchActive = false;
+            poseGuardRecoveryFrames = 0;
+            baselineY = null;
+            baselineTorsoHeight = null;
+        }
+
+        // Very slowly follow ordinary posture changes without learning a bent pose.
+        poseGuardUprightTorsoHeight = poseGuardUprightTorsoHeight * 0.995 +
+            torso.torsoHeight * 0.005;
+    }
+
+    return { isHuman: true, allowCounting: true };
+}
+
 function resetReacquisitionCandidate() {
     reacquisitionCandidateOrigin = null;
     reacquisitionCandidateFrames = 0;
@@ -2793,6 +3050,11 @@ function resetPoseTrackingCalibration() {
     lastWalkTime = 0;
     lastConfirmedJumpTime = 0;
     untrustedPoseFrames = 0;
+    poseGuardUprightTorsoHeight = null;
+    poseGuardCrouchActive = false;
+    poseGuardRecoveryFrames = 0;
+    groundGuideAnchorX = null;
+    groundGuideAnchorY = null;
     resetReacquisitionCandidate();
     // Frozen geometry is visual state derived from the tracked body. Discard it
     // with the pose baseline so a partial reacquisition cannot stay locked small.
@@ -2945,11 +3207,14 @@ function startSessionWithCountdown() {
 initializeModel();
 
 startBtn.addEventListener('click', async () => {
+    setSessionWeightFrom(weightInput, restartWeightInput);
+
     // 1. Immediately fade out title screen controls to avoid frozen box state
     const titleScreenElems = [
         document.getElementById('welcome-animation'),
         document.getElementById('app-title'),
         document.getElementById('welcome-title'),
+        document.getElementById('weight-input-row'),
         goalSettings,
         startBtn,
         historyBtn
@@ -3418,6 +3683,27 @@ function scheduleNextPrediction(frameStartedAt) {
     setTimeout(predictWebcam, delayMs);
 }
 
+function handleUntrustedPoseFrame() {
+    baselineY = null;
+    baselineTorsoHeight = null;
+    suppressJumpForPoseGuard();
+    lostTrackingFrames++;
+
+    const isConfigActive = (
+        document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
+        document.getElementById('history-panel')?.style.display === "flex" ||
+        document.getElementById('history-detail-panel')?.style.display === "flex" ||
+        document.getElementById('stats-panel')?.style.display === "flex"
+    );
+    if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
+        isOutOfFrame = true;
+        boundsWarning.classList.add("show");
+        if (!isPaused) {
+            accumulatedTime += Date.now() - sessionStartTime;
+        }
+    }
+}
+
 function predictWebcam() {
     if (!cameraActive) {
         predictionLoopActive = false;
@@ -3445,29 +3731,17 @@ function predictWebcam() {
             
             if (result.landmarks && result.landmarks.length > 0) {
                 const landmarks = result.landmarks[0];
-                drawWireframe(landmarks, canvas.width, canvas.height);
-                processJumpLogic(landmarks);
-            } else {
-                baselineY = null;
-                baselineTorsoHeight = null;
-                isJumping = false;
-                jumpTakeoffTime = 0;
-                lostTrackingFrames++;
-                
-                // Show OUT OF FRAME only after sustained pose loss, not a single skipped frame.
-                const isConfigActive = (
-                    document.getElementById('mid-session-goal-panel')?.style.display === "flex" ||
-                    document.getElementById('history-panel')?.style.display === "flex" ||
-                    document.getElementById('history-detail-panel')?.style.display === "flex" ||
-                    document.getElementById('stats-panel')?.style.display === "flex"
-                );
-                if (lostTrackingFrames > 10 && !isOutOfFrame && !isConfigActive && cameraActive && !isCountdownActive) {
-                    isOutOfFrame = true;
-                    boundsWarning.classList.add("show");
-                    if (!isPaused) {
-                        accumulatedTime += Date.now() - sessionStartTime;
-                    }
+                const poseValidation = evaluatePoseForJumpTracking(landmarks);
+                if (poseValidation.isHuman) {
+                    drawWireframe(landmarks, canvas.width, canvas.height);
                 }
+                if (poseValidation.allowCounting) {
+                    processJumpLogic(landmarks);
+                } else if (!poseValidation.isHuman) {
+                    handleUntrustedPoseFrame();
+                }
+            } else {
+                handleUntrustedPoseFrame();
             }
         });
     } catch (detectErr) {
@@ -3736,17 +4010,33 @@ function drawWireframe(landmarks, w, h) {
         .map(index => landmarks[index])
         .filter(lm => lm && Number.isFinite(lm.x) && Number.isFinite(lm.y) &&
                       lm.x >= 0 && lm.x <= 1 && lm.y >= 0 && lm.y <= 1);
-    const detectedGroundY = visibleFootLms.length > 0
-        ? Math.max(...visibleFootLms.map(lm => lm.y * h))
-        : yMax;
-    // Keep the guide a fixed size for the current camera view. Only its position
-    // follows the feet, so spreading the arms cannot resize or shift the zone.
+    // Prefer feet MediaPipe is actually confident about. A single low-confidence
+    // toe estimate can otherwise drag the zone away from the real floor.
+    const trustedFootLms = visibleFootLms.filter(lm => getLandmarkConfidence(lm) >= 0.20);
+    const groundFootLms = trustedFootLms.length >= 2 ? trustedFootLms : visibleFootLms;
+    const detectedGroundY = groundFootLms.length > 0
+        ? Math.max(...groundFootLms.map(lm => lm.y))
+        : yMax / h;
+    const detectedGroundX = groundFootLms.length > 0
+        ? groundFootLms.reduce((sum, lm) => sum + lm.x, 0) / groundFootLms.length
+        : (xMin + bw / 2) / w;
+
+    if (groundGuideAnchorX === null || groundGuideAnchorY === null) {
+        groundGuideAnchorX = detectedGroundX;
+        groundGuideAnchorY = detectedGroundY;
+    } else if (isCountdownActive) {
+        // Settle quickly while the user gets in position. Once the countdown
+        // ends, leave this anchor untouched until tracking is deliberately reset.
+        groundGuideAnchorX = groundGuideAnchorX * 0.82 + detectedGroundX * 0.18;
+        groundGuideAnchorY = groundGuideAnchorY * 0.82 + detectedGroundY * 0.18;
+    }
+
+    // Keep the guide a fixed size and position for the active set, so spreading
+    // the arms or lifting the feet cannot resize or move the zone.
     const groundDepth = Math.max(28, Math.min(60, h * 0.09));
     const groundWidth = Math.max(160, Math.min(360, w * 0.32));
-    const groundCenterX = visibleFootLms.length > 0
-        ? visibleFootLms.reduce((sum, lm) => sum + lm.x * w, 0) / visibleFootLms.length
-        : xMin + bw / 2;
-    const groundTopY = Math.min(h - groundDepth - 4, Math.max(4, detectedGroundY + 6));
+    const groundCenterX = groundGuideAnchorX * w;
+    const groundTopY = Math.min(h - groundDepth - 4, Math.max(4, groundGuideAnchorY * h + 6));
     const groundBottomY = groundTopY + groundDepth;
     const groundBottomLeft = Math.max(4, groundCenterX - groundWidth / 2);
     const groundBottomRight = Math.min(w - 4, groundCenterX + groundWidth / 2);
@@ -4418,11 +4708,15 @@ doneBtn.addEventListener('click', () => {
     statTime.innerText = `${mins}:${secs}`;
     document.getElementById('stat-freeze-time').innerText = frozenTimeText;
     const distanceMiles = (jumpCount * 0.0015).toFixed(2);
-    const estimatedCalories = jumpCount * 0.10;
+    const estimatedCalories = calculateEstimatedCalories(jumpCount, sessionWeightLb);
     statSpeed.innerText = jpm;
     statDist.innerText = `${distanceMiles} mi`;
     document.getElementById('stat-calories').innerText =
         `${Number.isInteger(estimatedCalories) ? estimatedCalories : estimatedCalories.toFixed(1)} kcal`;
+    const statWeightRow = document.getElementById('stat-weight-row');
+    statWeightRow.style.display = sessionWeightLb === null ? "none" : "flex";
+    document.getElementById('stat-weight').innerText =
+        sessionWeightLb === null ? '—' : `${sessionWeightLb} lb`;
     
     const streakSecs = Math.max(0, Math.floor(maxStreakDuration / 1000));
     const sMins = String(Math.floor(streakSecs / 60)).padStart(2, '0');
@@ -4503,6 +4797,7 @@ doneBtn.addEventListener('click', () => {
             speed: jpm,
             distance: `${distanceMiles} mi`,
             calories: estimatedCalories,
+            weightLb: sessionWeightLb,
             monstersKilled: monstersKilledThisSession,
             freezeTime: frozenTimeText,
             freezeTimeMs: Math.round(frozenElapsedMs),
@@ -4607,6 +4902,8 @@ continueSetBtn.addEventListener('click', () => {
 });
 
 restartBtn.addEventListener('click', () => {
+    setSessionWeightFrom(restartWeightInput, weightInput);
+
     const statsPanel = document.getElementById('stats-panel');
     statsPanel.classList.add('fade-out');
 
@@ -5088,6 +5385,11 @@ function openSessionDetails(id) {
     document.getElementById('detail-speed').innerText = `${session.speed || 0} JPM`;
     document.getElementById('detail-distance').innerText = session.distance || '0 mi';
     document.getElementById('detail-calories').innerText = `${calorieText} kcal`;
+    const storedWeight = parseFloat(session.weightLb);
+    const detailWeightRow = document.getElementById('detail-weight-row');
+    detailWeightRow.style.display = Number.isFinite(storedWeight) ? 'flex' : 'none';
+    document.getElementById('detail-weight').innerText =
+        Number.isFinite(storedWeight) ? `${storedWeight} lb` : '—';
 
     const detailGoal = document.getElementById('detail-goal-summary');
     if (session.goalInfo) {
@@ -5258,6 +5560,12 @@ const jumperNameInput = document.getElementById('jumper-name-input');
 const nameInputRow = document.getElementById('name-input-row');
 const welcomeTitle = document.getElementById('welcome-title');
 const cachedName = localStorage.getItem('jr_jumper_name');
+const cachedWeight = parseFloat(localStorage.getItem(LAST_WEIGHT_STORAGE_KEY));
+
+if (Number.isFinite(cachedWeight) && cachedWeight >= 30 && cachedWeight <= 700) {
+    weightInput.value = String(cachedWeight);
+    restartWeightInput.value = String(cachedWeight);
+}
 
 if (cachedName && cachedName.trim().length > 0) {
     // Name already saved — show greeting, hide input row
