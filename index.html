@@ -3743,9 +3743,11 @@ function predictWebcam() {
             if (result.landmarks && result.landmarks.length > 0) {
                 const landmarks = result.landmarks[0];
                 const poseValidation = evaluatePoseForJumpTracking(landmarks);
-                if (poseValidation.isHuman) {
-                    drawWireframe(landmarks, canvas.width, canvas.height);
-                }
+                // Keep visual pose feedback independent from the stricter counting
+                // guard. Mobile cameras often report lower confidence even when the
+                // landmarks are usable, and users still need the wireframe, box, and
+                // ground guide to position themselves correctly.
+                drawWireframe(landmarks, canvas.width, canvas.height);
                 if (poseValidation.allowCounting) {
                     processJumpLogic(landmarks);
                 } else if (!poseValidation.isHuman) {
