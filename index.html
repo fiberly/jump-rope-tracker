@@ -188,6 +188,20 @@ canvas {
     width: 360px !important;
 }
 
+/* Preserve GPU time for pose inference on older dual-core laptops. Live
+   backdrop blur forces the video beneath this panel to be recomposited every
+   frame and becomes especially costly while the pose overlay is changing. */
+.low-power-device .ui-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(20, 20, 20, 0.88);
+    transition: none;
+}
+
+.low-power-device .counter {
+    text-shadow: none;
+}
+
 .fade-out {
     opacity: 0 !important;
     transform: translateY(-8px) scale(0.96) !important;
@@ -260,6 +274,13 @@ canvas {
 .start-button:active {
     transform: translateY(0) scale(0.965);
     box-shadow: 0 2px 10px rgba(255, 87, 34, 0.4);
+}
+
+.start-button:disabled {
+    cursor: wait;
+    opacity: 0.62;
+    transform: none;
+    box-shadow: 0 2px 10px rgba(255, 87, 34, 0.2);
 }
 
 .done-button {
@@ -1811,7 +1832,7 @@ input[type="number"]::-webkit-outer-spin-button {
                 </div>
             </div>
 
-            <button id="start-btn" class="start-button" style="display: block; width: 100%; margin-top: 10px; font-size: 14px; padding: 8px 18px; border-radius: 12px;">Start camera & jump rope session</button>
+            <button id="start-btn" class="start-button" disabled aria-busy="true" style="display: block; width: 100%; margin-top: 10px; font-size: 14px; padding: 8px 18px; border-radius: 12px;">Loading tracking model…</button>
             <button id="history-btn" class="history-button" style="display: block; width: 100%; margin-top: 8px; font-size: 14px; padding: 8px 18px; border-radius: 12px;">View Workout History</button>
             <div id="session-controls" style="display: none; justify-content: center; gap: 8px; margin-top: 6px;">
                 <button id="pause-btn" class="pause-button" style="margin-top: 0; padding: 6px 14px; font-size: 13px; border-radius: 10px;">Pause Session</button>
@@ -2115,12 +2136,12 @@ input[type="number"]::-webkit-outer-spin-button {
     <script type="module">
 let PoseLandmarker, FilesetResolver;
 try {
-    const visionModule = await import("./vision_bundle.js");
+    const visionModule = await import("./vision_bundle.js?v=1.0.1");
     PoseLandmarker = visionModule.PoseLandmarker;
     FilesetResolver = visionModule.FilesetResolver;
 } catch (importErr) {
     console.warn("Local module import failed, falling back to CDN module:", importErr);
-    const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/vision_bundle.js");
+    const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs");
     PoseLandmarker = visionModule.PoseLandmarker;
     FilesetResolver = visionModule.FilesetResolver;
 }
@@ -2207,6 +2228,8 @@ let runningMode = "VIDEO";
 let lastVideoTime = -1;
 let cameraActive = false;
 let predictionLoopActive = false;
+let sessionStartupInProgress = false;
+let activeInferenceDelegate = "CPU";
 
 // Jump Tracking State
 let jumpCount = 0;
@@ -2297,9 +2320,17 @@ const COMPACT_UI_IDLE_MS = 5000;
 const MOBILE_WORKOUT_VIEW = window.matchMedia(
     '(max-width: 700px), (hover: none) and (pointer: coarse)'
 );
+// Older dual-core laptops usually report four logical processors because of
+// Hyper-Threading. Keep the same model, input quality, and target cadence on
+// those machines, but leave a small paint window between inference calls so
+// pose detection cannot completely starve video/UI rendering.
+const LOGICAL_PROCESSOR_COUNT = navigator.hardwareConcurrency || 4;
+const LOW_POWER_DESKTOP = !MOBILE_WORKOUT_VIEW.matches && LOGICAL_PROCESSOR_COUNT <= 4;
+document.documentElement.classList.toggle("low-power-device", LOW_POWER_DESKTOP);
 const MOBILE_INFERENCE_INTERVAL_MS = 33;
 const MOBILE_MIN_COOLING_GAP_MS = 8;
 const DESKTOP_INFERENCE_INTERVAL_MS = 33;
+const DESKTOP_MIN_COOLING_GAP_MS = LOW_POWER_DESKTOP ? 10 : 0;
 const RESUME_CALIBRATION_COUNTDOWN_SECONDS = 5;
 const CALIBRATION_POSE_FRAMES_REQUIRED = 8;
 const REACQUISITION_MOTION_FRAMES_REQUIRED = 6;
@@ -2319,7 +2350,8 @@ function getCameraVideoConstraints() {
     return {
         facingMode: "user",
         width: { ideal: 1280 },
-        height: { ideal: 720 }
+        height: { ideal: 720 },
+        frameRate: { ideal: 30, max: 30 }
     };
 }
 
@@ -2361,6 +2393,11 @@ function resetCompactWorkoutUI() {
 }
 
 function registerCountedJumpForCompactUI(countedAt) {
+    // Switching panel layout after five quick jumps adds a burst of style,
+    // layout, and compositing work at exactly the moment an older Mac needs its
+    // resources for pose inference. Keep its workout panel stable instead.
+    if (LOW_POWER_DESKTOP) return;
+
     if (previousCountedJumpTime > 0 && countedAt - previousCountedJumpTime <= QUICK_JUMP_MAX_GAP_MS) {
         quickJumpSequence++;
     } else {
@@ -2651,47 +2688,106 @@ const POSE_CONNECTIONS = [
 
 // Initialize MediaPipe Tasks
 async function initializeModel(showReadyUI = true) {
-    const modelPath = "./pose_landmarker_full.task";
+    const localModelPath = "./pose_landmarker_full.task";
+    const cdnModelPath = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task";
+    const cdnWasmRoot = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
     const trackingConfidence = 0.5;
 
-    try {
-        // Stage 1: Try local WASM + local model
-        const vision = await FilesetResolver.forVisionTasks("./wasm");
-        poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: modelPath,
-                delegate: "CPU"
-            },
-            runningMode: runningMode,
-            minPoseDetectionConfidence: trackingConfidence,
-            minPosePresenceConfidence: trackingConfidence,
-            minTrackingConfidence: trackingConfidence
+    // Keep the model and tracking options identical across every attempt. Only
+    // the WebAssembly loader changes. Explicit non-SIMD attempts cover older
+    // browsers whose automatic SIMD feature detection is unreliable.
+    const runtimeAttempts = [
+        {
+            label: "local automatic runtime",
+            modelAssetPath: localModelPath,
+            getFileset: async () => {
+                const fileset = await FilesetResolver.forVisionTasks("./wasm");
+                return {
+                    ...fileset,
+                    wasmLoaderPath: `${fileset.wasmLoaderPath}?v=1.0.1`,
+                    wasmBinaryPath: `${fileset.wasmBinaryPath}?v=1.0.1`
+                };
+            }
+        },
+        {
+            label: "local compatibility runtime",
+            modelAssetPath: localModelPath,
+            getFileset: async () => ({
+                wasmLoaderPath: "./wasm/vision_wasm_nosimd_internal.js?v=1.0.1",
+                wasmBinaryPath: "./wasm/vision_wasm_nosimd_internal.wasm?v=1.0.1"
+            })
+        },
+        {
+            label: "CDN automatic runtime",
+            modelAssetPath: cdnModelPath,
+            getFileset: () => FilesetResolver.forVisionTasks(cdnWasmRoot)
+        },
+        {
+            label: "CDN compatibility runtime",
+            modelAssetPath: cdnModelPath,
+            getFileset: async () => ({
+                wasmLoaderPath: `${cdnWasmRoot}/vision_wasm_nosimd_internal.js`,
+                wasmBinaryPath: `${cdnWasmRoot}/vision_wasm_nosimd_internal.wasm`
+            })
+        }
+    ];
+
+    poseLandmarker = null;
+    let lastInitializationError = null;
+    const delegateAttempts = LOW_POWER_DESKTOP ? ["GPU", "CPU"] : ["CPU"];
+    runtimeLoop:
+    for (const attempt of runtimeAttempts) {
+        const vision = await attempt.getFileset().catch(filesetErr => {
+            lastInitializationError = filesetErr;
+            console.warn(`MediaPipe ${attempt.label} loader failed:`, filesetErr);
+            return null;
         });
-        console.log("Loaded MediaPipe model locally!");
-    } catch (localErr) {
-        console.warn("Local model initialization failed, attempting CDN fallback:", localErr);
-        try {
-            // Stage 2: Fallback to CDN WASM + CDN model
-            const visionCDN = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1/wasm");
-            poseLandmarker = await PoseLandmarker.createFromOptions(visionCDN, {
-                baseOptions: {
-                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
-                    delegate: "CPU"
-                },
-                runningMode: runningMode,
-                minPoseDetectionConfidence: trackingConfidence,
-                minPosePresenceConfidence: trackingConfidence,
-                minTrackingConfidence: trackingConfidence
-            });
-            console.log("Loaded MediaPipe model from CDN!");
-        } catch (cdnErr) {
-            console.error("CDN model initialization failed:", cdnErr);
+        if (!vision) continue;
+
+        for (const delegate of delegateAttempts) {
+            try {
+                poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: attempt.modelAssetPath,
+                        delegate
+                    },
+                    runningMode,
+                    minPoseDetectionConfidence: trackingConfidence,
+                    minPosePresenceConfidence: trackingConfidence,
+                    minTrackingConfidence: trackingConfidence
+                });
+                activeInferenceDelegate = delegate;
+                console.log(`Loaded MediaPipe full model with ${attempt.label} and ${delegate} delegate.`);
+                break runtimeLoop;
+            } catch (attemptErr) {
+                lastInitializationError = attemptErr;
+                poseLandmarker = null;
+                console.warn(`MediaPipe ${attempt.label} (${delegate}) failed:`, attemptErr);
+            }
         }
     }
-    if (showReadyUI) {
-        statusText.innerText = "Ready!";
-        startBtn.style.display = "block";
-        goalSettings.style.display = "flex";
+
+    if (!poseLandmarker && lastInitializationError) {
+        console.error("All MediaPipe initialization paths failed:", lastInitializationError);
+    }
+    // Do not offer camera startup until pose inference is actually available.
+    // On older hardware the full model can take noticeably longer to initialize.
+    if (showReadyUI && !sessionStartupInProgress && !cameraActive) {
+        statusText.style.display = "block";
+        if (poseLandmarker) {
+            statusText.innerText = "Ready!";
+            startBtn.disabled = false;
+            startBtn.setAttribute("aria-busy", "false");
+            startBtn.innerText = "Start camera & jump rope session";
+            startBtn.style.display = "block";
+            goalSettings.style.display = "flex";
+        } else {
+            statusText.innerText = "Pose tracking model could not load. Please refresh.";
+            startBtn.disabled = true;
+            startBtn.setAttribute("aria-busy", "false");
+            startBtn.innerText = "Tracking model unavailable";
+            startBtn.style.display = "block";
+        }
     }
 }
 
@@ -3230,6 +3326,11 @@ function startSessionWithCountdown() {
 initializeModel();
 
 startBtn.addEventListener('click', async () => {
+    if (sessionStartupInProgress || cameraActive) return;
+    sessionStartupInProgress = true;
+    startBtn.disabled = true;
+    startBtn.setAttribute("aria-busy", "true");
+
     setSessionWeightFrom(weightInput, restartWeightInput);
 
     // 1. Immediately fade out title screen controls to avoid frozen box state
@@ -3243,6 +3344,15 @@ startBtn.addEventListener('click', async () => {
         startBtn,
         historyBtn
     ];
+    const originalTitleScreenDisplays = new Map(
+        titleScreenElems.filter(Boolean).map(el => [el, el.style.display])
+    );
+
+    // Hide interactive welcome controls synchronously. On slower machines the
+    // inference loop can delay animation timers, but these controls must never
+    // remain clickable or visible once camera startup has begun.
+    startBtn.style.display = "none";
+    historyBtn.style.display = "none";
     
     titleScreenElems.forEach(el => {
         if (el) el.classList.add('fade-out');
@@ -3250,7 +3360,7 @@ startBtn.addEventListener('click', async () => {
 
     const cameraLoadingBox = document.getElementById('camera-loading-box');
 
-    setTimeout(() => {
+    const titleScreenHideTimeout = setTimeout(() => {
         titleScreenElems.forEach(el => {
             if (el) {
                 el.style.display = "none";
@@ -3296,6 +3406,13 @@ startBtn.addEventListener('click', async () => {
         }
         cameraActive = true;
         startPredictionLoop();
+        clearTimeout(titleScreenHideTimeout);
+        titleScreenElems.forEach(el => {
+            if (!el) return;
+            el.style.display = "none";
+            el.classList.remove('fade-out');
+        });
+        sessionStartupInProgress = false;
         
         // 2. Camera active! Hide camera loading box and transition smoothly into Active Workout UI
         if (cameraLoadingBox) {
@@ -3419,8 +3536,22 @@ startBtn.addEventListener('click', async () => {
         startSessionWithCountdown();
     } catch (err) {
         console.error(err);
+        clearTimeout(titleScreenHideTimeout);
+        sessionStartupInProgress = false;
+        startBtn.disabled = false;
+        startBtn.setAttribute("aria-busy", "false");
+        startBtn.innerText = "Start camera & jump rope session";
+        titleScreenElems.forEach(el => {
+            if (!el) return;
+            el.classList.remove('fade-out');
+            el.style.display = originalTitleScreenDisplays.get(el) || "";
+        });
+        if (cameraLoadingBox) {
+            cameraLoadingBox.style.display = "none";
+            cameraLoadingBox.classList.remove('fade-in');
+        }
+        statusText.style.display = "block";
         statusText.innerText = "Camera access denied or unavailable.";
-        startBtn.style.display = "block";
     }
 });
 
@@ -3518,6 +3649,22 @@ function startStreakGracePeriod() {
 }
 
 function showStreakBurst(streakCount) {
+    if (LOW_POWER_DESKTOP) {
+        let streakEl = streakLayer.querySelector(".streak-text");
+        if (!streakEl) {
+            const streakSide = Math.random() < 0.5 ? "left" : "right";
+            streakAnchor = calculateStreakAnchor(streakSide);
+            streakEl = document.createElement("div");
+            streakEl.className = `streak-text side-${streakSide}`;
+            streakEl.style.animation = "none";
+            streakEl.style.transition = "none";
+            streakLayer.replaceChildren(streakEl);
+        }
+        streakEl.innerText = streakCount.toLocaleString();
+        positionStreakCounter(streakEl);
+        return;
+    }
+
     if (streakLayer.classList.contains("fading")) {
         clearStreakBursts();
     }
@@ -3530,8 +3677,12 @@ function showStreakBurst(streakCount) {
     }
 
     streakLayer.querySelectorAll(".streak-text").forEach(previousEl => {
-        previousEl.classList.add("trailing");
-        setTimeout(() => previousEl.remove(), 1000);
+        if (LOW_POWER_DESKTOP) {
+            previousEl.remove();
+        } else {
+            previousEl.classList.add("trailing");
+            setTimeout(() => previousEl.remove(), 1000);
+        }
     });
 
     streakEl.className = `streak-text side-${streakSide}`;
@@ -3555,7 +3706,8 @@ function showStreakBurst(streakCount) {
     streakLayer.querySelectorAll(".streak-text").forEach(positionStreakCounter);
 
     const visibleBursts = streakLayer.querySelectorAll(".streak-text");
-    if (visibleBursts.length > 4) {
+    const maximumVisibleBursts = LOW_POWER_DESKTOP ? 1 : 4;
+    if (visibleBursts.length > maximumVisibleBursts) {
         visibleBursts[0].remove();
     }
 }
@@ -3661,6 +3813,19 @@ function damageMonsterForCurrentJump() {
     const remainingHp = Math.max(0, targetReps - repsDoneThisSet);
     const healthPercent = (remainingHp / targetReps) * 100;
 
+    if (LOW_POWER_DESKTOP) {
+        updateMonsterHealthDisplay(remainingHp, healthPercent);
+        if (remainingHp === 0 && !monsterArtEl.classList.contains("defeated")) {
+            monstersKilledThisSession++;
+            monsterArtEl.classList.add("defeated");
+            const defeatedLabel = document.createElement("div");
+            defeatedLabel.className = "monster-defeated-label";
+            defeatedLabel.innerText = "DEFEATED!";
+            monsterArtEl.appendChild(defeatedLabel);
+        }
+        return;
+    }
+
     requestAnimationFrame(() => {
         updateMonsterHealthDisplay(remainingHp, healthPercent);
 
@@ -3702,10 +3867,15 @@ function scheduleNextPrediction(frameStartedAt) {
         // lowers the frame rate as a phone warms up instead of building a queue.
         delayMs = Math.max(MOBILE_MIN_COOLING_GAP_MS, MOBILE_INFERENCE_INTERVAL_MS - frameWorkMs);
     } else {
-        // The proven backup effectively supplied the desktop detector at camera cadence.
-        // Compensate for inference time so the full 33ms is frame-to-frame, rather than
-        // waiting another 33ms after inference and accidentally dropping to ~15 FPS.
-        delayMs = Math.max(0, DESKTOP_INFERENCE_INTERVAL_MS - frameWorkMs);
+        // Fast desktops stay near camera cadence. Low-power desktops retain a small
+        // post-inference gap so rendering and controls are never starved by WASM.
+        const minimumCoolingGap = LOW_POWER_DESKTOP && activeInferenceDelegate === "GPU"
+            ? 3
+            : DESKTOP_MIN_COOLING_GAP_MS;
+        delayMs = Math.max(
+            minimumCoolingGap,
+            DESKTOP_INFERENCE_INTERVAL_MS - frameWorkMs
+        );
     }
 
     setTimeout(predictWebcam, delayMs);
@@ -3789,19 +3959,27 @@ function predictWebcam() {
             
             if (result.landmarks && result.landmarks.length > 0) {
                 const landmarks = result.landmarks[0];
-                const poseValidation = evaluatePoseForJumpTracking(landmarks);
                 // Keep visual pose feedback independent from the stricter counting
-                // guard. Mobile cameras often report lower confidence even when the
-                // landmarks are usable, and users still need the wireframe, box, and
-                // ground guide to position themselves correctly.
-                drawWireframe(landmarks, canvas.width, canvas.height);
-                if (poseValidation.allowCounting) {
-                    processJumpLogic(landmarks);
-                } else if (!poseValidation.isHuman) {
-                    // A visible pose may be temporarily unsuitable for counting
-                    // without actually being outside the camera frame. Keep the
-                    // warning reserved for missing/off-screen tracking anchors.
-                    handleUntrustedPoseFrame(hasVisibleTrackingAnchors(landmarks));
+                // guard. Draw first and isolate renderer/validator errors so one
+                // subsystem cannot blank all pose feedback on an older browser.
+                try {
+                    drawWireframe(landmarks, canvas.width, canvas.height);
+                } catch (overlayErr) {
+                    console.warn("Pose overlay frame skipped:", overlayErr);
+                }
+
+                try {
+                    const poseValidation = evaluatePoseForJumpTracking(landmarks);
+                    if (poseValidation.allowCounting) {
+                        processJumpLogic(landmarks);
+                    } else if (!poseValidation.isHuman) {
+                        // A visible pose may be temporarily unsuitable for counting
+                        // without actually being outside the camera frame. Keep the
+                        // warning reserved for missing/off-screen tracking anchors.
+                        handleUntrustedPoseFrame(hasVisibleTrackingAnchors(landmarks));
+                    }
+                } catch (trackingErr) {
+                    console.warn("Pose tracking frame skipped:", trackingErr);
                 }
             } else {
                 handleUntrustedPoseFrame();
@@ -3818,7 +3996,7 @@ function predictWebcam() {
 
 function spawnIceParticles(x, y, bw, bh) {
     iceParticles = [];
-    const count = 40;
+    const count = LOW_POWER_DESKTOP ? 16 : 40;
     for (let i = 0; i < count; i++) {
         iceParticles.push({
             x: x + Math.random() * bw,
@@ -3853,7 +4031,7 @@ function updateAndDrawIceParticles(ctx) {
         ctx.rotate(p.rotation);
         ctx.fillStyle = p.color + Math.max(0, p.opacity) + ')';
         ctx.shadowColor = '#00e5ff';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = LOW_POWER_DESKTOP ? 0 : 10;
         ctx.beginPath();
         ctx.moveTo(0, -p.size);
         ctx.lineTo(p.size * 0.6, p.size * 0.4);
@@ -3971,7 +4149,7 @@ function drawWireframe(landmarks, w, h) {
         ctx.strokeStyle = "#b026ff";
         ctx.lineWidth = 3;
         ctx.shadowColor = "#b026ff";
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = LOW_POWER_DESKTOP ? 0 : 8;
         ctx.strokeRect(xMin, yMin, bw, bh);
         ctx.shadowBlur = 0;
         frozenBoxX = null;
@@ -4018,14 +4196,14 @@ function drawWireframe(landmarks, w, h) {
         ctx.strokeStyle = iceBreakCount >= 4 ? "#ffeb3b" : "#00e5ff";
         ctx.lineWidth = iceBreakCount >= 4 ? 5 : 4;
         ctx.shadowColor = iceBreakCount >= 4 ? "#ff9800" : "#00e5ff";
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = LOW_POWER_DESKTOP ? 0 : 15;
         ctx.strokeRect(fX, fY, fW, fH);
 
         // Render Progressive Jagged Ice Cracks (1 to 4)
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 3;
         ctx.shadowColor = "#00e5ff";
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = LOW_POWER_DESKTOP ? 0 : 12;
 
         if (iceBreakCount >= 1) {
             // Crack 1: Upper Left Branch
@@ -4118,7 +4296,7 @@ function drawWireframe(landmarks, w, h) {
     ctx.strokeStyle = "#00ff00";
     ctx.lineWidth = 3;
     ctx.shadowColor = "#00ff00";
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = LOW_POWER_DESKTOP ? 0 : 8;
     ctx.stroke();
     ctx.restore();
 
@@ -4428,18 +4606,10 @@ function processJumpLogic(landmarks) {
     const jumpThreshold = Math.min(Math.max(referenceHeight * jumpThresholdScale, 0.010), 0.028);
     const now = Date.now();
 
-    // Distance-aware refractory period. Medium framing needs the longest guard because
-    // landing/uncrouch motion is large enough to resemble an immediate second takeoff.
-    let minRefractory;
-    if (!hipsVisible) {
-        minRefractory = 220;
-    } else if (referenceHeight <= 0.28) {
-        minRefractory = 220;
-    } else if (referenceHeight <= 0.42) {
-        minRefractory = 270;
-    } else {
-        minRefractory = 200;
-    }
+    // The landing-state lock already prevents duplicate counts. Keep only a short
+    // time guard so a fast rebound can begin shortly after the previous landing.
+    // The former 200-270ms window rejected legitimate high-cadence takeoffs.
+    const minRefractory = hipsVisible ? 75 : 90;
     
     // The refractory period prevents duplicate counts; release the landing lock in time for a fast rebound.
     if (isLandingUncrouch && now - lastJumpTime >= minRefractory) {
@@ -4447,7 +4617,9 @@ function processJumpLogic(landmarks) {
     }
 
     // Keep only a small post-landing guard so quick consecutive jumps are not rejected.
-    const effectiveTakeoffThreshold = (framesSinceLastJump <= 5) ? (jumpThreshold * 1.10) : jumpThreshold;
+    const effectiveTakeoffThreshold = (framesSinceLastJump <= 2)
+        ? (jumpThreshold * 1.04)
+        : jumpThreshold;
 
     if (trackerY < (baselineY - effectiveTakeoffThreshold)) {
         if (!isJumping && !isLandingUncrouch) {
@@ -4479,8 +4651,9 @@ function processJumpLogic(landmarks) {
         }
     } else {
         if (isJumping) {
-            // Require returning near ground level (within 30% of jump height) to complete landing
-            const landingThreshold = Math.max(jumpThreshold * 0.30, 0.0003);
+                // Accept a near-ground sample as a landing. At high cadence an older
+                // machine may not sample the single frame at the exact lowest point.
+                const landingThreshold = Math.max(jumpThreshold * 0.55, 0.0003);
             if (trackerY > (baselineY - landingThreshold)) {
                 // A single airborne sample followed by a landing is enough for fast rope cadence.
                 if (jumpTakeoffTime > 0 && now - jumpTakeoffTime >= 20) {
@@ -4694,10 +4867,12 @@ function updateUI() {
         suspendStreakExpiry();
     }
 
-    uiPanel.classList.add('bump');
-    setTimeout(() => {
-        uiPanel.classList.remove('bump');
-    }, 150);
+    if (!LOW_POWER_DESKTOP) {
+        uiPanel.classList.add('bump');
+        setTimeout(() => {
+            uiPanel.classList.remove('bump');
+        }, 150);
+    }
 }
 
 doneBtn.addEventListener('click', () => {
